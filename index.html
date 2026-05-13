@@ -106,7 +106,7 @@
 </div>
 
 <script>
-    // ВАШИ РАБОЧИЕ ССЫЛКИ (формат /pub?gid=...&output=csv)
+    // ========== ВАШИ РАБОЧИЕ ССЫЛКИ (формат /pub?gid=...&output=csv) ==========
     const SHEETS = {
         maleGroups: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRg8NHCSUuEByVlhTTyac8Es1yOp8Wbbx07-1LaJJkNdOhiQVyfqU9LyEd-AxVgCPKD14D5GFF4bKPs/pub?gid=0&single=true&output=csv',
         femaleGroups: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRg8NHCSUuEByVlhTTyac8Es1yOp8Wbbx07-1LaJJkNdOhiQVyfqU9LyEd-AxVgCPKD14D5GFF4bKPs/pub?gid=390985909&single=true&output=csv',
@@ -114,7 +114,7 @@
         femaleBracket: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRg8NHCSUuEByVlhTTyac8Es1yOp8Wbbx07-1LaJJkNdOhiQVyfqU9LyEd-AxVgCPKD14D5GFF4bKPs/pub?gid=1603037245&single=true&output=csv'
     };
     
-    // Прокси для обхода CORS (проблем с доступом из GitHub Pages)
+    // Прокси для обхода CORS
     const PROXY = 'https://api.allorigins.win/raw?url=';
     
     function getProxiedUrl(originalUrl) {
@@ -290,7 +290,7 @@
             html += `<th>В/П</th><th>Разница</th></tr></thead><tbody>`;
             
             for (let i = 0; i < n; i++) {
-                html += `<td><td class="player-col">${escapeHtml(group.players[i])}</td>`;
+                html += `<tr><td class="player-col">${escapeHtml(group.players[i])}</td>`;
                 for (let j = 0; j < n; j++) {
                     if (i === j) html += '<td>—</td>';
                     else {
@@ -365,7 +365,7 @@
             if (debugDiv) debugDiv.innerHTML = `✅ ${name}: ${text.length} символов`;
             return text;
         } catch (e) {
-            if (debugDiv) debugDiv.innerHTML = `❌ ${name}: ${e.message}`;
+            if (debugDiv) debugDiv.innerHTML = `❌ ${name}: ${e.message} — проверьте, что лист "${name}" опубликован`;
             console.error(`Ошибка ${name}:`, e);
             return '';
         }
@@ -378,6 +378,18 @@
         statusDiv.innerHTML = '⏳ Загрузка данных из Google Таблиц...';
         statusDiv.className = 'status status-info';
         debugDiv.innerHTML = 'Подключение...';
+        
+        // Проверяем доступность каждой ссылки отдельно
+        for (const [key, url] of Object.entries(SHEETS)) {
+            try {
+                const testResponse = await fetch(getProxiedUrl(url));
+                if (!testResponse.ok) {
+                    debugDiv.innerHTML = `❌ Лист ${key} не доступен (${testResponse.status}). Проверьте публикацию.`;
+                }
+            } catch(e) {
+                debugDiv.innerHTML = `❌ Ошибка доступа к ${key}`;
+            }
+        }
         
         try {
             const [maleGroupsCSV, femaleGroupsCSV, maleBracketCSV, femaleBracketCSV] = await Promise.all([
