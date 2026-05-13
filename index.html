@@ -85,7 +85,6 @@
         .match-score { text-align: center; background: #f1efff; padding: 8px; border-radius: 30px; font-family: monospace; }
         .winner-badge { background: #0b0829; color: white; padding: 6px; border-radius: 40px; text-align: center; font-size: 0.75rem; margin-top: 8px; }
         @media (min-width: 768px) { .bracket-container { flex-direction: row; flex-wrap: wrap; } .bracket-stage { flex: 1; } }
-        .inline-edit input { width: 80px; padding: 4px; border-radius: 12px; border: 1px solid #ccc; text-align: center; }
     </style>
 </head>
 <body>
@@ -100,7 +99,7 @@
         <div id="status" class="status"></div>
         <div id="lastUpdate" class="status" style="font-size:0.7rem;"></div>
         <div style="margin-top: 12px; font-size: 0.7rem; color: #6c6a8b;">
-            ⚠️ Организатор: после изменения таблицы нажмите "Обновить" здесь
+            📊 Данные из Google Таблиц · Обновляйте таблицу — данные изменятся здесь
         </div>
     </div>
 
@@ -108,8 +107,7 @@
 </div>
 
 <script>
-    // ⚠️ ЗАМЕНИТЕ ЭТИ ССЫЛКИ НА ВАШИ ИЗ GOOGLE TABLES (после публикации) ⚠️
-    // Как получить: Файл → Опубликовать в интернет → выбрать лист → формат CSV → скопировать ссылку
+    // ВАШИ ИСПРАВЛЕННЫЕ ССЫЛКИ (убрано /e/ и /pubhtml, добавлен /export?format=csv)
     const SHEETS = {
         maleGroups: 'https://docs.google.com/spreadsheets/d/2PACX-1vRg8NHCSUuEByVlhTTyac8Es1yOp8Wbbx07-1LaJJkNdOhiQVyfqU9LyEd-AxVgCPKD14D5GFF4bKPs/export?format=csv&gid=0',
         femaleGroups: 'https://docs.google.com/spreadsheets/d/2PACX-1vRg8NHCSUuEByVlhTTyac8Es1yOp8Wbbx07-1LaJJkNdOhiQVyfqU9LyEd-AxVgCPKD14D5GFF4bKPs/export?format=csv&gid=390985909',
@@ -164,7 +162,6 @@
         });
     }
     
-    // Парсим CSV из Google Sheets
     function parseCSV(csvText) {
         const rows = [];
         const lines = csvText.split(/\r?\n/);
@@ -190,7 +187,6 @@
         return rows;
     }
     
-    // Парсим группы из CSV
     function parseGroups(csvText) {
         const rows = parseCSV(csvText);
         if (rows.length < 2) return [];
@@ -200,7 +196,7 @@
         
         for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
-            if (row[0] && row[0].startsWith("Группа")) {
+            if (row[0] && (row[0].startsWith("Группа") || row[0].startsWith("Группа"))) {
                 if (currentGroup) groups.push(currentGroup);
                 const players = [];
                 for (let j = 1; j < row.length && row[j]; j++) {
@@ -212,7 +208,6 @@
                     scores: Array(players.length).fill().map(() => Array(players.length).fill(""))
                 };
             } else if (currentGroup && row[0]) {
-                // Находим индекс игрока
                 const playerName = row[0];
                 const playerIndex = currentGroup.players.findIndex(p => p === playerName);
                 if (playerIndex !== -1) {
@@ -229,7 +224,6 @@
         return groups;
     }
     
-    // Парсим олимпийскую сетку из CSV
     function parseBracket(csvText) {
         const rows = parseCSV(csvText);
         if (rows.length < 2) {
@@ -271,6 +265,11 @@
         if (!container) return;
         container.innerHTML = '';
         
+        if (groups.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:40px; color:#888;">Нет данных. Заполните Google таблицу.</div>';
+            return;
+        }
+        
         groups.forEach(group => {
             const n = group.players.length;
             if (n === 0) return;
@@ -295,7 +294,7 @@
                     }
                 }
                 html += `<td class="stats-col">${stats[i].wins}/${stats[i].totalGames - stats[i].wins}</td>`;
-                html += `<td class="stats-col">${stats[i].diff}</td></table>`;
+                html += `<td class="stats-col">${stats[i].diff}</td></tr>`;
             }
             html += `</tbody></table></div></div>`;
             container.innerHTML += html;
@@ -353,6 +352,7 @@
     async function fetchSheet(url, sheetName) {
         try {
             const response = await fetch(url + '&t=' + Date.now());
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const text = await response.text();
             return text;
         } catch (e) {
@@ -386,15 +386,13 @@
             document.getElementById('lastUpdate').innerHTML = `Обновлено: ${currentData.lastUpdate}`;
             setTimeout(() => { if(statusDiv) statusDiv.innerHTML = ''; }, 3000);
         } catch (error) {
-            statusDiv.innerHTML = '❌ Ошибка загрузки. Проверьте ссылки на таблицы.';
+            statusDiv.innerHTML = '❌ Ошибка загрузки. Проверьте интернет и таблицы.';
             statusDiv.className = 'status status-error';
             console.error(error);
         }
     }
     
     document.getElementById('refreshBtn').addEventListener('click', loadAllData);
-    
-    // Загружаем данные сразу при открытии страницы
     loadAllData();
 </script>
 </body>
