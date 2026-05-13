@@ -75,6 +75,7 @@
         .status { font-size: 0.75rem; margin-top: 10px; padding: 6px; border-radius: 30px; }
         .status-success { background: #d4e0b2; color: #2b6e3c; }
         .status-error { background: #f0d6d6; color: #b91c1c; }
+        .status-info { background: #e0ddf5; color: #4a3f7a; }
         .bracket-container { display: flex; flex-direction: column; gap: 24px; }
         .bracket-stage { background: #faf9ff; border-radius: 24px; padding: 16px; }
         .stage-title { font-weight: 800; margin-bottom: 16px; padding-left: 12px; border-left: 4px solid #0b0829; }
@@ -98,22 +99,27 @@
         <button id="refreshBtn" class="btn-primary">🔄 Обновить данные</button>
         <div id="status" class="status"></div>
         <div id="lastUpdate" class="status" style="font-size:0.7rem;"></div>
-        <div style="margin-top: 12px; font-size: 0.7rem; color: #6c6a8b;">
-            📊 Данные из Google Таблиц · Обновляйте таблицу — данные изменятся здесь
-        </div>
+        <div id="debugInfo" style="font-size:0.7rem; margin-top:8px; color:#6c6a8b;"></div>
     </div>
 
     <div id="content"></div>
 </div>
 
 <script>
-    // ВАШИ ИСПРАВЛЕННЫЕ ССЫЛКИ (убрано /e/ и /pubhtml, добавлен /export?format=csv)
+    // ВАШИ РАБОЧИЕ ССЫЛКИ (формат /pub?gid=...&output=csv)
     const SHEETS = {
-        maleGroups: 'https://docs.google.com/spreadsheets/d/2PACX-1vRg8NHCSUuEByVlhTTyac8Es1yOp8Wbbx07-1LaJJkNdOhiQVyfqU9LyEd-AxVgCPKD14D5GFF4bKPs/export?format=csv&gid=0',
-        femaleGroups: 'https://docs.google.com/spreadsheets/d/2PACX-1vRg8NHCSUuEByVlhTTyac8Es1yOp8Wbbx07-1LaJJkNdOhiQVyfqU9LyEd-AxVgCPKD14D5GFF4bKPs/export?format=csv&gid=390985909',
-        maleBracket: 'https://docs.google.com/spreadsheets/d/2PACX-1vRg8NHCSUuEByVlhTTyac8Es1yOp8Wbbx07-1LaJJkNdOhiQVyfqU9LyEd-AxVgCPKD14D5GFF4bKPs/export?format=csv&gid=1498729870',
-        femaleBracket: 'https://docs.google.com/spreadsheets/d/2PACX-1vRg8NHCSUuEByVlhTTyac8Es1yOp8Wbbx07-1LaJJkNdOhiQVyfqU9LyEd-AxVgCPKD14D5GFF4bKPs/export?format=csv&gid=1603037245'
+        maleGroups: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRg8NHCSUuEByVlhTTyac8Es1yOp8Wbbx07-1LaJJkNdOhiQVyfqU9LyEd-AxVgCPKD14D5GFF4bKPs/pub?gid=0&single=true&output=csv',
+        femaleGroups: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRg8NHCSUuEByVlhTTyac8Es1yOp8Wbbx07-1LaJJkNdOhiQVyfqU9LyEd-AxVgCPKD14D5GFF4bKPs/pub?gid=390985909&single=true&output=csv',
+        maleBracket: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRg8NHCSUuEByVlhTTyac8Es1yOp8Wbbx07-1LaJJkNdOhiQVyfqU9LyEd-AxVgCPKD14D5GFF4bKPs/pub?gid=1498729870&single=true&output=csv',
+        femaleBracket: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRg8NHCSUuEByVlhTTyac8Es1yOp8Wbbx07-1LaJJkNdOhiQVyfqU9LyEd-AxVgCPKD14D5GFF4bKPs/pub?gid=1603037245&single=true&output=csv'
     };
+    
+    // Прокси для обхода CORS (проблем с доступом из GitHub Pages)
+    const PROXY = 'https://api.allorigins.win/raw?url=';
+    
+    function getProxiedUrl(originalUrl) {
+        return PROXY + encodeURIComponent(originalUrl);
+    }
     
     let currentData = {
         maleGroups: [],
@@ -196,7 +202,7 @@
         
         for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
-            if (row[0] && (row[0].startsWith("Группа") || row[0].startsWith("Группа"))) {
+            if (row[0] && (row[0].includes("Группа") || row[0].includes("Группа"))) {
                 if (currentGroup) groups.push(currentGroup);
                 const players = [];
                 for (let j = 1; j < row.length && row[j]; j++) {
@@ -207,7 +213,7 @@
                     players: players,
                     scores: Array(players.length).fill().map(() => Array(players.length).fill(""))
                 };
-            } else if (currentGroup && row[0]) {
+            } else if (currentGroup && row[0] && row[0].trim() !== "") {
                 const playerName = row[0];
                 const playerIndex = currentGroup.players.findIndex(p => p === playerName);
                 if (playerIndex !== -1) {
@@ -266,7 +272,7 @@
         container.innerHTML = '';
         
         if (groups.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding:40px; color:#888;">Нет данных. Заполните Google таблицу.</div>';
+            container.innerHTML = '<div style="text-align:center; padding:40px; color:#888;">📭 Нет данных. Заполните Google таблицу.</div>';
             return;
         }
         
@@ -284,7 +290,7 @@
             html += `<th>В/П</th><th>Разница</th></tr></thead><tbody>`;
             
             for (let i = 0; i < n; i++) {
-                html += `<tr><td class="player-col">${escapeHtml(group.players[i])}</td>`;
+                html += `<td><td class="player-col">${escapeHtml(group.players[i])}</td>`;
                 for (let j = 0; j < n; j++) {
                     if (i === j) html += '<td>—</td>';
                     else {
@@ -311,7 +317,7 @@
                 <div class="stage-title">${stage.name}</div>
                 <div class="matches-list">`;
             if (stage.matches.length === 0) {
-                html += `<div style="text-align:center; padding:20px; color:#888;">Нет данных</div>`;
+                html += `<div style="text-align:center; padding:20px; color:#888;">📭 Нет данных</div>`;
             } else {
                 stage.matches.forEach(match => {
                     html += `<div class="match-card">
@@ -349,29 +355,36 @@
         return String(str).replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
     }
     
-    async function fetchSheet(url, sheetName) {
+    async function fetchSheet(url, name) {
+        const proxyUrl = getProxiedUrl(url);
+        const debugDiv = document.getElementById('debugInfo');
         try {
-            const response = await fetch(url + '&t=' + Date.now());
+            const response = await fetch(proxyUrl);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const text = await response.text();
+            if (debugDiv) debugDiv.innerHTML = `✅ ${name}: ${text.length} символов`;
             return text;
         } catch (e) {
-            console.error(`Ошибка загрузки ${sheetName}:`, e);
+            if (debugDiv) debugDiv.innerHTML = `❌ ${name}: ${e.message}`;
+            console.error(`Ошибка ${name}:`, e);
             return '';
         }
     }
     
     async function loadAllData() {
         const statusDiv = document.getElementById('status');
+        const debugDiv = document.getElementById('debugInfo');
+        
         statusDiv.innerHTML = '⏳ Загрузка данных из Google Таблиц...';
-        statusDiv.className = 'status';
+        statusDiv.className = 'status status-info';
+        debugDiv.innerHTML = 'Подключение...';
         
         try {
             const [maleGroupsCSV, femaleGroupsCSV, maleBracketCSV, femaleBracketCSV] = await Promise.all([
-                fetchSheet(SHEETS.maleGroups, 'maleGroups'),
-                fetchSheet(SHEETS.femaleGroups, 'femaleGroups'),
-                fetchSheet(SHEETS.maleBracket, 'maleBracket'),
-                fetchSheet(SHEETS.femaleBracket, 'femaleBracket')
+                fetchSheet(SHEETS.maleGroups, 'Мужские группы'),
+                fetchSheet(SHEETS.femaleGroups, 'Женские группы'),
+                fetchSheet(SHEETS.maleBracket, 'Мужская сетка'),
+                fetchSheet(SHEETS.femaleBracket, 'Женская сетка')
             ]);
             
             currentData.maleGroups = parseGroups(maleGroupsCSV);
@@ -381,13 +394,18 @@
             currentData.lastUpdate = new Date().toLocaleString();
             
             renderAll();
-            statusDiv.innerHTML = '✅ Данные загружены из Google Таблиц!';
+            
+            const totalGroups = currentData.maleGroups.length + currentData.femaleGroups.length;
+            statusDiv.innerHTML = `✅ Данные загружены! Найдено групп: ${totalGroups}`;
             statusDiv.className = 'status status-success';
             document.getElementById('lastUpdate').innerHTML = `Обновлено: ${currentData.lastUpdate}`;
-            setTimeout(() => { if(statusDiv) statusDiv.innerHTML = ''; }, 3000);
+            debugDiv.innerHTML = `Готово. Мужских групп: ${currentData.maleGroups.length}, Женских: ${currentData.femaleGroups.length}`;
+            
+            setTimeout(() => { if(statusDiv) statusDiv.innerHTML = ''; }, 4000);
         } catch (error) {
-            statusDiv.innerHTML = '❌ Ошибка загрузки. Проверьте интернет и таблицы.';
+            statusDiv.innerHTML = '❌ Ошибка загрузки';
             statusDiv.className = 'status status-error';
+            debugDiv.innerHTML = `Ошибка: ${error.message}`;
             console.error(error);
         }
     }
