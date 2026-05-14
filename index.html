@@ -107,7 +107,6 @@
                 let winner = determineWinner(score);
                 if (winner === 1) wins++;
                 
-                // Подсчёт партий и очков
                 let parts = score.split(',').map(s => s.trim());
                 for (let part of parts) {
                     let s = part.split(':');
@@ -139,14 +138,12 @@
             });
         }
         
-        // Сортировка: сначала по победам, потом по выигранным партиям, потом по разнице очков
         stats.sort((a, b) => {
             if (a.wins !== b.wins) return b.wins - a.wins;
             if (a.setsWon !== b.setsWon) return b.setsWon - a.setsWon;
             return b.pointsDiff - a.pointsDiff;
         });
         
-        // Назначаем места
         const places = new Array(n);
         for (let i = 0; i < stats.length; i++) {
             places[stats[i].index] = i + 1;
@@ -154,7 +151,6 @@
         return places;
     }
     
-    // ПОЛНЫЙ ПОДСЧЁТ СТАТИСТИКИ ГРУППЫ
     function calculateGroupStats(group) {
         const n = group.players.length;
         const places = calculatePlaces(group);
@@ -259,13 +255,14 @@
         return groups;
     }
     
+    // ========== ИСПРАВЛЕННЫЙ ПАРСИНГ СЕТОК — ПОКАЗЫВАЕТ ВСЕ МАТЧИ ==========
     function parseBracket(csvText) {
         const rows = parseCSV(csvText);
-        const stages = {
-            'Четвертьфиналы': [],
-            'Полуфиналы': [],
-            'Финал': []
-        };
+        
+        // Три стадии
+        const quarterfinals = [];
+        const semifinals = [];
+        const finals = [];
         
         if (rows.length < 2) return [
             { name: "Четвертьфиналы", matches: [] },
@@ -273,31 +270,38 @@
             { name: "Финал", matches: [] }
         ];
         
+        // Проходим по всем строкам начиная с 1 (пропускаем заголовок)
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
             if (!row[0] || row[0].trim() === "") continue;
             
-            const stageNameFull = row[0].trim().toLowerCase();
-            let stageKey = null;
+            const stageName = row[0].trim().toLowerCase();
+            const match = {
+                p1: row[1] || "",
+                p2: row[2] || "",
+                score: row[3] || "",
+                winner: row[4] || ""
+            };
             
-            if (stageNameFull.includes('четвертьфинал')) stageKey = 'Четвертьфиналы';
-            else if (stageNameFull.includes('полуфинал')) stageKey = 'Полуфиналы';
-            else if (stageNameFull.includes('финал')) stageKey = 'Финал';
-            
-            if (stageKey && row[1] && row[1].trim()) {
-                stages[stageKey].push({
-                    p1: row[1] || "",
-                    p2: row[2] || "",
-                    score: row[3] || "",
-                    winner: row[4] || ""
-                });
+            // Если в названии есть "четвертьфинал" — добавляем в четвертьфиналы
+            if (stageName.includes('четвертьфинал')) {
+                quarterfinals.push(match);
+            }
+            // Если есть "полуфинал" — добавляем в полуфиналы
+            else if (stageName.includes('полуфинал')) {
+                semifinals.push(match);
+            }
+            // Если есть "финал" — добавляем в финалы
+            else if (stageName.includes('финал')) {
+                finals.push(match);
             }
         }
         
+        // Возвращаем все три стадии с их матчами
         return [
-            { name: "Четвертьфиналы", matches: stages['Четвертьфиналы'] },
-            { name: "Полуфиналы", matches: stages['Полуфиналы'] },
-            { name: "Финал", matches: stages['Финал'] }
+            { name: "Четвертьфиналы", matches: quarterfinals },
+            { name: "Полуфиналы", matches: semifinals },
+            { name: "Финал", matches: finals }
         ];
     }
     
@@ -341,12 +345,9 @@
                         html += `<td class="${cls}">${escapeHtml(val)}</td>`;
                     }
                 }
-                // Игры: сколько сыграл / сколько выиграл
                 html += `<td class="stats-col">${stats[i].played}<br><span style="font-size:0.7rem;">(+${stats[i].wins})</span></td>`;
-                // Очки: партии выиграл / разница воланов
                 const setsDiff = stats[i].setsWon - (stats[i].played - stats[i].wins);
                 html += `<td class="stats-col">${stats[i].setsWon}<br><span style="font-size:0.7rem; ${stats[i].pointsDiff >= 0 ? 'color:#2b6e3c;' : 'color:#b91c1c;'}">${stats[i].pointsDiff >= 0 ? '+' : ''}${stats[i].pointsDiff}</span></td>`;
-                // Место
                 const medal = stats[i].place === 1 ? '🥇' : (stats[i].place === 2 ? '🥈' : (stats[i].place === 3 ? '🥉' : ''));
                 html += `<td class="place-col">${medal} ${stats[i].place}</td>
                         </tr>`;
@@ -369,8 +370,9 @@
             if (stage.matches.length === 0) {
                 html += `<div style="text-align:center; padding:20px; color:#888;">📭 Нет данных</div>`;
             } else {
-                stage.matches.forEach(match => {
+                stage.matches.forEach((match, idx) => {
                     html += `<div class="match-card">
+                        <div style="font-size:0.7rem; color:#6c6a8b; margin-bottom:6px;">Матч ${idx+1}</div>
                         <div class="match-players-row">
                             <span>${escapeHtml(match.p1) || '—'}</span>
                             <span>⚡</span>
