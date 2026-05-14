@@ -6,72 +6,22 @@
     <title>Первенство МИФИ | Турнир</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background: #bfbfdb;
-            padding: 20px 12px 40px;
-        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #bfbfdb; padding: 20px 12px 40px; }
         .container { max-width: 1400px; margin: 0 auto; }
-        .card {
-            background: white;
-            border-radius: 32px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-            margin-bottom: 28px;
-            overflow: hidden;
-        }
-        .card-header {
-            background: #0b0829;
-            color: white;
-            padding: 16px 20px;
-            font-size: 1.3rem;
-            font-weight: 700;
-        }
+        .card { background: white; border-radius: 32px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); margin-bottom: 28px; overflow: hidden; }
+        .card-header { background: #0b0829; color: white; padding: 16px 20px; font-size: 1.3rem; font-weight: 700; }
         .card-body { padding: 20px; }
-        .group-container {
-            background: #fefefe;
-            border-radius: 24px;
-            margin-bottom: 30px;
-            border: 1px solid #e0ddf5;
-        }
-        .group-title-bar {
-            background: #eae9fc;
-            padding: 12px 20px;
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
+        .group-container { background: #fefefe; border-radius: 24px; margin-bottom: 30px; border: 1px solid #e0ddf5; }
+        .group-title-bar { background: #eae9fc; padding: 12px 20px; font-weight: 700; font-size: 1.1rem; }
         .table-wrapper { overflow-x: auto; padding: 16px; }
-        .tournament-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-            min-width: 500px;
-        }
-        .tournament-table th, .tournament-table td {
-            border: 1px solid #d4d4e0;
-            padding: 10px 8px;
-            text-align: center;
-        }
+        .tournament-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 500px; }
+        .tournament-table th, .tournament-table td { border: 1px solid #d4d4e0; padding: 10px 8px; text-align: center; }
         .tournament-table th { background: #f5f4ff; font-weight: 700; }
         .player-col { font-weight: 700; background: #faf9ff; text-align: left !important; }
         .win-cell { background-color: #c8f0d1 !important; }
         .stats-col { background: #f5f3ff; font-weight: 600; }
-        .refresh-panel {
-            background: #f8f7fc;
-            border-radius: 32px;
-            padding: 18px;
-            margin-bottom: 24px;
-            border: 2px solid #cbc8e0;
-            text-align: center;
-        }
-        .btn-primary {
-            background: #0b0829;
-            color: white;
-            border: none;
-            padding: 10px 24px;
-            border-radius: 40px;
-            font-weight: bold;
-            cursor: pointer;
-        }
+        .refresh-panel { background: #f8f7fc; border-radius: 32px; padding: 18px; margin-bottom: 24px; border: 2px solid #cbc8e0; text-align: center; }
+        .btn-primary { background: #0b0829; color: white; border: none; padding: 10px 24px; border-radius: 40px; font-weight: bold; cursor: pointer; }
         .status { font-size: 0.75rem; margin-top: 10px; padding: 6px; border-radius: 30px; }
         .status-success { background: #d4e0b2; color: #2b6e3c; }
         .status-error { background: #f0d6d6; color: #b91c1c; }
@@ -99,14 +49,12 @@
         <button id="refreshBtn" class="btn-primary">🔄 Обновить данные</button>
         <div id="status" class="status"></div>
         <div id="lastUpdate" class="status" style="font-size:0.7rem;"></div>
-        <div id="debugInfo" style="font-size:0.7rem; margin-top:8px; color:#6c6a8b;"></div>
     </div>
 
     <div id="content"></div>
 </div>
 
 <script>
-    // ВАШИ ССЫЛКИ
     const SHEETS = {
         maleGroups: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRg8NHCSUuEByVlhTTyac8Es1yOp8Wbbx07-1LaJJkNdOhiQVyfqU9LyEd-AxVgCPKD14D5GFF4bKPs/pub?gid=0&single=true&output=csv',
         femaleGroups: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRg8NHCSUuEByVlhTTyac8Es1yOp8Wbbx07-1LaJJkNdOhiQVyfqU9LyEd-AxVgCPKD14D5GFF4bKPs/pub?gid=390985909&single=true&output=csv',
@@ -114,12 +62,7 @@
         femaleBracket: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRg8NHCSUuEByVlhTTyac8Es1yOp8Wbbx07-1LaJJkNdOhiQVyfqU9LyEd-AxVgCPKD14D5GFF4bKPs/pub?gid=1603037245&single=true&output=csv'
     };
     
-    let currentData = {
-        maleGroups: [],
-        femaleGroups: [],
-        maleBracketStages: [],
-        femaleBracketStages: []
-    };
+    let currentData = { maleGroups: [], femaleGroups: [], maleBracketStages: [], femaleBracketStages: [] };
     
     function determineWinner(scoreStr) {
         if (!scoreStr || scoreStr.trim() === "") return null;
@@ -162,11 +105,14 @@
     }
     
     function parseCSV(csvText) {
-        if (!csvText || csvText.trim() === "") return [];
+        if (!csvText) return [];
         const rows = [];
         const lines = csvText.split(/\r?\n/);
         for (let line of lines) {
-            if (line.trim() === "") continue;
+            if (line.trim() === "") {
+                rows.push([]);
+                continue;
+            }
             const cells = [];
             let inQuote = false;
             let currentCell = "";
@@ -187,71 +133,62 @@
         return rows;
     }
     
-    // НОВАЯ ЛОГИКА ПАРСИНГА ГРУПП — правильно читает матрицу
-    function parseGroups(csvText, groupName) {
+    function parseGroups(csvText) {
         const rows = parseCSV(csvText);
-        if (rows.length < 2) return [];
+        if (rows.length === 0) return [];
         
         const groups = [];
-        let currentGroup = null;
-        let startRow = 0;
+        let i = 0;
         
-        // Ищем строку с названием группы (первая колонка не пустая и содержит буквы)
-        for (let i = 0; i < rows.length; i++) {
-            const firstCell = rows[i][0];
-            if (firstCell && firstCell.match(/[А-Яа-я]/) && !firstCell.match(/^\d/)) {
-                if (currentGroup && currentGroup.players.length > 0) {
-                    groups.push(currentGroup);
-                }
-                
-                // Собираем имена игроков из этой строки (начиная со 2-й колонки)
+        while (i < rows.length) {
+            // Пропускаем полностью пустые строки
+            if (rows[i].length === 0 || (rows[i].length === 1 && rows[i][0] === "")) {
+                i++;
+                continue;
+            }
+            
+            const firstRow = rows[i];
+            // Проверяем, что это строка с названием группы (первая ячейка содержит буквы и не похожа на имя игрока)
+            const isGroupRow = firstRow[0] && firstRow[0].match(/[А-Яа-я]/) && 
+                               (firstRow[0].includes("Группа") || (firstRow[1] && firstRow[1].match(/[А-Яа-я]/)));
+            
+            if (isGroupRow && firstRow[1] && firstRow[1].trim() !== "") {
+                // Собираем игроков
                 const players = [];
-                for (let j = 1; j < rows[i].length; j++) {
-                    if (rows[i][j] && rows[i][j].trim() !== "" && !rows[i][j].match(/^\d/)) {
-                        players.push(rows[i][j].trim());
+                for (let j = 1; j < firstRow.length; j++) {
+                    if (firstRow[j] && firstRow[j].trim() !== "") {
+                        players.push(firstRow[j].trim());
                     }
                 }
                 
                 if (players.length > 0) {
-                    currentGroup = {
-                        name: firstCell,
+                    const group = {
+                        name: firstRow[0].trim(),
                         players: players,
                         scores: Array(players.length).fill().map(() => Array(players.length).fill(""))
                     };
-                    startRow = i + 1;
-                }
-            } 
-            // Заполняем результаты (строки с именами игроков и счетами)
-            else if (currentGroup && rows[i][0] && rows[i][0].trim() !== "") {
-                const playerName = rows[i][0].trim();
-                const playerIndex = currentGroup.players.findIndex(p => p === playerName);
-                
-                if (playerIndex !== -1) {
-                    // Заполняем счета против других игроков
-                    for (let j = 1; j < rows[i].length && j <= currentGroup.players.length; j++) {
-                        if (rows[i][j] && rows[i][j].trim() !== "") {
-                            currentGroup.scores[playerIndex][j-1] = rows[i][j];
+                    
+                    i++;
+                    // Читаем строки с результатами (пока не встретим пустую строку или новую группу)
+                    while (i < rows.length && rows[i].length > 0 && rows[i][0] && rows[i][0].trim() !== "") {
+                        const resultRow = rows[i];
+                        const playerName = resultRow[0].trim();
+                        const playerIdx = group.players.findIndex(p => p === playerName);
+                        
+                        if (playerIdx !== -1) {
+                            for (let j = 1; j < resultRow.length && j <= players.length; j++) {
+                                if (resultRow[j] && resultRow[j].trim() !== "") {
+                                    group.scores[playerIdx][j-1] = resultRow[j];
+                                }
+                            }
                         }
+                        i++;
                     }
+                    groups.push(group);
+                    continue;
                 }
             }
-        }
-        
-        if (currentGroup && currentGroup.players.length > 0) {
-            groups.push(currentGroup);
-        }
-        
-        // Если нет групп, создаем демо-данные для теста
-        if (groups.length === 0 && groupName === 'male') {
-            groups.push({
-                name: "Группа A (пример)",
-                players: ["Иванов", "Петров", "Сидоров"],
-                scores: [
-                    ["", "2:0 (21,15)", "2:1 (19,21,21)"],
-                    ["0:2 (15,21)", "", "2:0 (21,18)"],
-                    ["1:2 (21,19,15)", "0:2 (18,21)", ""]
-                ]
-            });
+            i++;
         }
         
         return groups;
@@ -259,19 +196,13 @@
     
     function parseBracket(csvText) {
         const rows = parseCSV(csvText);
-        if (rows.length < 2) {
-            return [
-                { name: "Четвертьфиналы", matches: [] },
-                { name: "Полуфиналы", matches: [] },
-                { name: "Финал / Матч за 3 место", matches: [] }
-            ];
-        }
-        
         const stages = [
             { name: "Четвертьфиналы", matches: [] },
             { name: "Полуфиналы", matches: [] },
             { name: "Финал / Матч за 3 место", matches: [] }
         ];
+        
+        if (rows.length < 2) return stages;
         
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
@@ -307,7 +238,6 @@
         
         groups.forEach(group => {
             const n = group.players.length;
-            if (n === 0) return;
             const stats = calcStats(group);
             
             let html = `<div class="group-container">
@@ -385,15 +315,11 @@
     }
     
     async function fetchSheet(url, name) {
-        const debugDiv = document.getElementById('debugInfo');
         try {
             const response = await fetch(url + '&t=' + Date.now());
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const text = await response.text();
-            if (debugDiv) debugDiv.innerHTML = `✅ ${name}: загружено (${text.length} символов)`;
-            return text;
+            return await response.text();
         } catch (e) {
-            if (debugDiv) debugDiv.innerHTML = `❌ ${name}: ошибка — проверьте публикацию листа`;
             console.error(`Ошибка ${name}:`, e);
             return '';
         }
@@ -401,46 +327,32 @@
     
     async function loadAllData() {
         const statusDiv = document.getElementById('status');
-        const debugDiv = document.getElementById('debugInfo');
-        const btn = document.getElementById('refreshBtn');
-        
         statusDiv.innerHTML = '⏳ Загрузка данных...';
         statusDiv.className = 'status status-info';
-        debugDiv.innerHTML = 'Подключение к Google Таблицам...';
-        btn.disabled = true;
         
         try {
             const [maleGroupsCSV, femaleGroupsCSV, maleBracketCSV, femaleBracketCSV] = await Promise.all([
-                fetchSheet(SHEETS.maleGroups, 'Мужские группы'),
-                fetchSheet(SHEETS.femaleGroups, 'Женские группы'),
-                fetchSheet(SHEETS.maleBracket, 'Мужская сетка'),
-                fetchSheet(SHEETS.femaleBracket, 'Женская сетка')
+                fetchSheet(SHEETS.maleGroups, 'maleGroups'),
+                fetchSheet(SHEETS.femaleGroups, 'femaleGroups'),
+                fetchSheet(SHEETS.maleBracket, 'maleBracket'),
+                fetchSheet(SHEETS.femaleBracket, 'femaleBracket')
             ]);
             
-            currentData.maleGroups = parseGroups(maleGroupsCSV, 'male');
-            currentData.femaleGroups = parseGroups(femaleGroupsCSV, 'female');
+            currentData.maleGroups = parseGroups(maleGroupsCSV);
+            currentData.femaleGroups = parseGroups(femaleGroupsCSV);
             currentData.maleBracketStages = parseBracket(maleBracketCSV);
             currentData.femaleBracketStages = parseBracket(femaleBracketCSV);
             currentData.lastUpdate = new Date().toLocaleString();
             
             renderAll();
             
-            const maleCount = currentData.maleGroups.length;
-            const femaleCount = currentData.femaleGroups.length;
-            
-            statusDiv.innerHTML = `✅ Данные загружены! Мужских групп: ${maleCount}, Женских: ${femaleCount}`;
+            statusDiv.innerHTML = `✅ Загружено! Мужских групп: ${currentData.maleGroups.length}, Женских: ${currentData.femaleGroups.length}`;
             statusDiv.className = 'status status-success';
             document.getElementById('lastUpdate').innerHTML = `Обновлено: ${currentData.lastUpdate}`;
-            debugDiv.innerHTML = `Готово. Мужские группы: ${maleCount}, Женские группы: ${femaleCount}`;
-            
             setTimeout(() => { if(statusDiv) statusDiv.innerHTML = ''; }, 4000);
         } catch (error) {
             statusDiv.innerHTML = '❌ Ошибка загрузки';
             statusDiv.className = 'status status-error';
-            debugDiv.innerHTML = `Ошибка: ${error.message}`;
-            console.error(error);
-        } finally {
-            btn.disabled = false;
         }
     }
     
