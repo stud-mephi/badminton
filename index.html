@@ -47,6 +47,7 @@
         .match-score { text-align: center; background: #f1efff; padding: 8px; border-radius: 30px; font-family: monospace; }
         .winner-badge { background: #0b0829; color: white; padding: 6px; border-radius: 40px; text-align: center; font-size: 0.75rem; margin-top: 8px; }
         @media (min-width: 768px) { .bracket-container { flex-direction: row; flex-wrap: wrap; } .bracket-stage { flex: 1; } }
+        .force-refresh-hint { font-size: 0.7rem; color: #6c6a8b; margin-top: 8px; }
     </style>
 </head>
 <body>
@@ -60,6 +61,7 @@
         <button id="refreshBtn" class="btn-primary">🔄 Обновить данные</button>
         <div id="status" class="status"></div>
         <div id="lastUpdate" class="status" style="font-size:0.7rem;"></div>
+        <div class="force-refresh-hint">💡 Если данные старые — нажмите Ctrl+F5 (полное обновление)</div>
     </div>
 
     <div id="content"></div>
@@ -75,7 +77,6 @@
     
     let currentData = { maleGroups: [], femaleGroups: [], maleBracketStages: [], femaleBracketStages: [] };
     
-    // ОПРЕДЕЛЕНИЕ ПОБЕДИТЕЛЯ ПО ПАРТИЯМ
     function determineWinner(scoreStr) {
         if (!scoreStr || scoreStr.trim() === "") return null;
         let parts = scoreStr.split(',').map(s => s.trim());
@@ -92,7 +93,6 @@
         return null;
     }
     
-    // ПОДСЧЁТ СТАТИСТИКИ ДЛЯ ИГРОКА
     function calculatePlayerStats(group, playerIndex) {
         let played = 0;
         let wins = 0;
@@ -122,7 +122,6 @@
         return { played, wins, setsWon, pointsDiff };
     }
     
-    // ВЫЧИСЛЕНИЕ МЕСТ В ГРУППЕ
     function calculatePlaces(group) {
         const n = group.players.length;
         const stats = [];
@@ -255,11 +254,8 @@
         return groups;
     }
     
-    // ========== ИСПРАВЛЕННЫЙ ПАРСИНГ СЕТОК — ПОКАЗЫВАЕТ ВСЕ МАТЧИ ==========
     function parseBracket(csvText) {
         const rows = parseCSV(csvText);
-        
-        // Три стадии
         const quarterfinals = [];
         const semifinals = [];
         const finals = [];
@@ -270,7 +266,6 @@
             { name: "Финал", matches: [] }
         ];
         
-        // Проходим по всем строкам начиная с 1 (пропускаем заголовок)
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
             if (!row[0] || row[0].trim() === "") continue;
@@ -283,21 +278,11 @@
                 winner: row[4] || ""
             };
             
-            // Если в названии есть "четвертьфинал" — добавляем в четвертьфиналы
-            if (stageName.includes('четвертьфинал')) {
-                quarterfinals.push(match);
-            }
-            // Если есть "полуфинал" — добавляем в полуфиналы
-            else if (stageName.includes('полуфинал')) {
-                semifinals.push(match);
-            }
-            // Если есть "финал" — добавляем в финалы
-            else if (stageName.includes('финал')) {
-                finals.push(match);
-            }
+            if (stageName.includes('четвертьфинал')) quarterfinals.push(match);
+            else if (stageName.includes('полуфинал')) semifinals.push(match);
+            else if (stageName.includes('финал')) finals.push(match);
         }
         
-        // Возвращаем все три стадии с их матчами
         return [
             { name: "Четвертьфиналы", matches: quarterfinals },
             { name: "Полуфиналы", matches: semifinals },
@@ -346,7 +331,6 @@
                     }
                 }
                 html += `<td class="stats-col">${stats[i].played}<br><span style="font-size:0.7rem;">(+${stats[i].wins})</span></td>`;
-                const setsDiff = stats[i].setsWon - (stats[i].played - stats[i].wins);
                 html += `<td class="stats-col">${stats[i].setsWon}<br><span style="font-size:0.7rem; ${stats[i].pointsDiff >= 0 ? 'color:#2b6e3c;' : 'color:#b91c1c;'}">${stats[i].pointsDiff >= 0 ? '+' : ''}${stats[i].pointsDiff}</span></td>`;
                 const medal = stats[i].place === 1 ? '🥇' : (stats[i].place === 2 ? '🥈' : (stats[i].place === 3 ? '🥉' : ''));
                 html += `<td class="place-col">${medal} ${stats[i].place}</td>
@@ -409,7 +393,9 @@
     
     async function fetchSheet(url, name) {
         try {
-            const response = await fetch(url + '&t=' + Date.now());
+            // Добавляем уникальный параметр, чтобы обойти кеш браузера
+            const cacheBuster = '&_cb=' + Date.now() + '_' + Math.random();
+            const response = await fetch(url + cacheBuster);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             return await response.text();
         } catch (e) {
@@ -420,10 +406,14 @@
     
     async function loadAllData() {
         const statusDiv = document.getElementById('status');
-        statusDiv.innerHTML = '⏳ Загрузка данных...';
+        const lastUpdateDiv = document.getElementById('lastUpdate');
+        
+        statusDiv.innerHTML = '⏳ Загрузка свежих данных...';
         statusDiv.className = 'status status-info';
         
         try {
+            const startTime = Date.now();
+            
             const [maleGroupsCSV, femaleGroupsCSV, maleBracketCSV, femaleBracketCSV] = await Promise.all([
                 fetchSheet(SHEETS.maleGroups, 'maleGroups'),
                 fetchSheet(SHEETS.femaleGroups, 'femaleGroups'),
@@ -435,21 +425,26 @@
             currentData.femaleGroups = parseGroups(femaleGroupsCSV);
             currentData.maleBracketStages = parseBracket(maleBracketCSV);
             currentData.femaleBracketStages = parseBracket(femaleBracketCSV);
+            
+            const loadTime = Date.now() - startTime;
             currentData.lastUpdate = new Date().toLocaleString();
             
             renderAll();
             
-            statusDiv.innerHTML = `✅ Загружено! Мужских групп: ${currentData.maleGroups.length}, Женских: ${currentData.femaleGroups.length}`;
+            statusDiv.innerHTML = `✅ Загружено за ${loadTime} мс! Мужских групп: ${currentData.maleGroups.length}, Женских: ${currentData.femaleGroups.length}`;
             statusDiv.className = 'status status-success';
-            document.getElementById('lastUpdate').innerHTML = `Обновлено: ${currentData.lastUpdate}`;
-            setTimeout(() => { if(statusDiv) statusDiv.innerHTML = ''; }, 4000);
+            lastUpdateDiv.innerHTML = `Обновлено: ${currentData.lastUpdate}`;
+            
+            setTimeout(() => { if(statusDiv) statusDiv.innerHTML = ''; }, 3000);
         } catch (error) {
-            statusDiv.innerHTML = '❌ Ошибка загрузки';
+            statusDiv.innerHTML = '❌ Ошибка загрузки. Проверьте интернет.';
             statusDiv.className = 'status status-error';
         }
     }
     
     document.getElementById('refreshBtn').addEventListener('click', loadAllData);
+    
+    // Загружаем данные при открытии страницы
     loadAllData();
 </script>
 </body>
