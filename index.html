@@ -404,32 +404,31 @@
         });
     }
     
-    function renderBracket(stages, containerId) {
+        function renderBracket(stages, containerId) {
         const container = document.getElementById(containerId);
         if (!container) return;
         container.innerHTML = '';
         
         stages.forEach(stage => {
+            // Если нет матчей — пропускаем эту стадию полностью
+            if (stage.matches.length === 0) return;
+            
             let html = `<div class="bracket-stage">
                 <div class="stage-title">🏆 ${stage.name}</div>
                 <div class="matches-list">`;
             
-            if (stage.matches.length === 0) {
-                html += `<div style="text-align:center; padding:20px; color:#888;">📭 Нет данных</div>`;
-            } else {
-                stage.matches.forEach((match, idx) => {
-                    html += `<div class="match-card">
-                        <div style="font-size:0.7rem; color:#6c6a8b; margin-bottom:6px;">Матч ${idx+1}</div>
-                        <div class="match-players-row">
-                            <span>${escapeHtml(match.p1) || '—'}</span>
-                            <span>⚡</span>
-                            <span>${escapeHtml(match.p2) || '—'}</span>
-                        </div>
-                        <div class="match-score">${escapeHtml(match.score) || '—'}</div>
-                        <div class="winner-badge">🏅 ${match.winner ? escapeHtml(match.winner) : '—'}</div>
-                    </div>`;
-                });
-            }
+            stage.matches.forEach((match, idx) => {
+                html += `<div class="match-card">
+                    <div style="font-size:0.7rem; color:#6c6a8b; margin-bottom:6px;">Матч ${idx+1}</div>
+                    <div class="match-players-row">
+                        <span>${escapeHtml(match.p1) || '—'}</span>
+                        <span>⚡</span>
+                        <span>${escapeHtml(match.p2) || '—'}</span>
+                    </div>
+                    <div class="match-score">${escapeHtml(match.score) || '—'}</div>
+                    <div class="winner-badge">🏅 ${match.winner ? escapeHtml(match.winner) : '—'}</div>
+                </div>`;
+            });
             html += `</div></div>`;
             container.innerHTML += html;
         });
@@ -493,7 +492,7 @@
             
             renderAll();
             
-            statusDiv.innerHTML = `✅ Загружено за ${loadTime} мс! Мужских групп: ${currentData.maleGroups.length}, Женских: ${currentData.femaleGroups.length}`;
+            statusDiv.innerHTML = `✅ Загружено`;
             statusDiv.className = 'status status-success';
             lastUpdateDiv.innerHTML = `Обновлено: ${currentData.lastUpdate}`;
             
