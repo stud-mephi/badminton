@@ -25,8 +25,29 @@
             padding: 16px 20px;
             font-size: 1.3rem;
             font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
         }
-        .card-body { padding: 20px; }
+        .card-header:hover {
+            background: #1a1745;
+        }
+        .card-header .arrow {
+            font-size: 1.2rem;
+            transition: transform 0.3s;
+        }
+        .card-header .arrow.rotated {
+            transform: rotate(180deg);
+        }
+        .card-body {
+            padding: 20px;
+            display: none;
+        }
+        .card-body.open {
+            display: block;
+        }
         .group-container {
             background: #fefefe;
             border-radius: 24px;
@@ -102,7 +123,7 @@
 <div class="container">
     <div style="text-align: center; margin-bottom: 20px;">
         <h1 style="font-size: 2.2rem; background: linear-gradient(135deg,#0b0829,#413a7c); background-clip: text; -webkit-background-clip: text; color: transparent;">🏸 Первенство МИФИ</h1>
-        <p style="color: #4a457a;">Актуальные результаты турнира</p>
+        <p style="color: #4a457a;">Результаты турнира</p>
     </div>
 
     <div class="nav-buttons">
@@ -114,7 +135,6 @@
         <button id="refreshBtn" class="btn-primary">🔄 Обновить данные</button>
         <div id="status" class="status"></div>
         <div id="lastUpdate" class="status" style="font-size:0.7rem;"></div>
-        <div class="force-refresh-hint">💡 Если данные старые — нажмите Ctrl+F5 (полное обновление)</div>
     </div>
 
     <div id="content"></div>
@@ -131,18 +151,11 @@
     let currentData = { maleGroups: [], femaleGroups: [], maleBracketStages: [], femaleBracketStages: [] };
     
     // ========== УНИВЕРСАЛЬНЫЙ ПАРСИНГ СЧЁТА ==========
-    // Поддерживает форматы:
-    // - "21:15" (одна партия)
-    // - "21:15, 21:18" (две партии)
-    // - "21:15, 18:21, 21:10" (три партии)
-    // - "21:15,21:18" (без пробела)
     function parseScore(scoreStr) {
         if (!scoreStr || scoreStr.trim() === "") return [];
-        // Разделяем по запятой, убираем лишние пробелы
         let parts = scoreStr.split(',').map(s => s.trim());
         let results = [];
         for (let part of parts) {
-            // Ищем числа в формате "число:число"
             let match = part.match(/(\d+):(\d+)/);
             if (match) {
                 results.push({
@@ -154,17 +167,13 @@
         return results;
     }
     
-    // Подсчёт забитых очков (сумма первых чисел)
     function calculatePointsScored(scoreStr) {
         let parts = parseScore(scoreStr);
         let total = 0;
-        for (let part of parts) {
-            total += part.p1;
-        }
+        for (let part of parts) total += part.p1;
         return total;
     }
     
-    // Определение победителя (по количеству выигранных партий)
     function determineWinner(scoreStr) {
         let parts = parseScore(scoreStr);
         if (parts.length === 0) return null;
@@ -178,13 +187,10 @@
         return null;
     }
     
-    // Получение количества выигранных партий игроком 1
     function getSetsWon(scoreStr) {
         let parts = parseScore(scoreStr);
         let wins = 0;
-        for (let part of parts) {
-            if (part.p1 > part.p2) wins++;
-        }
+        for (let part of parts) if (part.p1 > part.p2) wins++;
         return wins;
     }
     
@@ -404,13 +410,12 @@
         });
     }
     
-        function renderBracket(stages, containerId) {
+    function renderBracket(stages, containerId) {
         const container = document.getElementById(containerId);
         if (!container) return;
         container.innerHTML = '';
         
         stages.forEach(stage => {
-            // Если нет матчей — пропускаем эту стадию полностью
             if (stage.matches.length === 0) return;
             
             let html = `<div class="bracket-stage">
@@ -434,18 +439,52 @@
         });
     }
     
+    // ========== ФУНКЦИЯ ДЛЯ СОЗДАНИЯ АККОРДЕОНА ==========
+    function createAccordionCard(title, contentId, isOpenByDefault = false) {
+        return `
+            <div class="card">
+                <div class="card-header" onclick="toggleAccordion('${contentId}')">
+                    <span>${title}</span>
+                    <span class="arrow" id="arrow-${contentId}">▼</span>
+                </div>
+                <div class="card-body" id="${contentId}">
+                    <div id="${contentId}-inner"></div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Функция для переключения видимости
+    window.toggleAccordion = function(contentId) {
+        const body = document.getElementById(contentId);
+        const arrow = document.getElementById(`arrow-${contentId}`);
+        if (body) {
+            body.classList.toggle('open');
+            if (arrow) {
+                arrow.classList.toggle('rotated');
+            }
+        }
+    };
+    
     function renderAll() {
         const content = document.getElementById('content');
+        
+        // Создаём карточки-аккордеоны
         content.innerHTML = `
-            <div class="card"><div class="card-header">🏸 Мужской одиночный разряд · Групповой этап</div><div class="card-body" id="maleGroups"></div></div>
-            <div class="card"><div class="card-header">🏆 Мужская олимпийская сетка · Плей-офф</div><div class="card-body"><div id="maleBracket" class="bracket-container"></div></div></div>
-            <div class="card"><div class="card-header">🏸 Женский одиночный разряд · Групповой этап</div><div class="card-body" id="femaleGroups"></div></div>
-            <div class="card"><div class="card-header">🥈 Женская олимпийская сетка · Плей-офф</div><div class="card-body"><div id="femaleBracket" class="bracket-container"></div></div></div>
+            ${createAccordionCard('🏸 Мужской одиночный разряд · Групповой этап', 'maleGroupsSection', true)}
+            ${createAccordionCard('🏆 Мужская олимпийская сетка · Плей-офф', 'maleBracketSection', false)}
+            ${createAccordionCard('🏸 Женский одиночный разряд · Групповой этап', 'femaleGroupsSection', false)}
+            ${createAccordionCard('🥈 Женская олимпийская сетка · Плей-офф', 'femaleBracketSection', false)}
         `;
-        renderGroups(currentData.maleGroups, 'maleGroups');
-        renderGroups(currentData.femaleGroups, 'femaleGroups');
-        renderBracket(currentData.maleBracketStages, 'maleBracket');
-        renderBracket(currentData.femaleBracketStages, 'femaleBracket');
+        
+        // Заполняем содержимое
+        renderGroups(currentData.maleGroups, 'maleGroupsSection-inner');
+        renderGroups(currentData.femaleGroups, 'femaleGroupsSection-inner');
+        renderBracket(currentData.maleBracketStages, 'maleBracketSection-inner');
+        renderBracket(currentData.femaleBracketStages, 'femaleBracketSection-inner');
+        
+        // Открываем первую секцию по умолчанию
+        document.getElementById('maleGroupsSection')?.classList.add('open');
     }
     
     function escapeHtml(str) {
@@ -469,12 +508,10 @@
         const statusDiv = document.getElementById('status');
         const lastUpdateDiv = document.getElementById('lastUpdate');
         
-        statusDiv.innerHTML = '⏳ Загрузка свежих данных...';
+        statusDiv.innerHTML = '⏳ Загрузка данных...';
         statusDiv.className = 'status status-info';
         
         try {
-            const startTime = Date.now();
-            
             const [maleGroupsCSV, femaleGroupsCSV, maleBracketCSV, femaleBracketCSV] = await Promise.all([
                 fetchSheet(SHEETS.maleGroups, 'maleGroups'),
                 fetchSheet(SHEETS.femaleGroups, 'femaleGroups'),
@@ -487,12 +524,11 @@
             currentData.maleBracketStages = parseBracket(maleBracketCSV);
             currentData.femaleBracketStages = parseBracket(femaleBracketCSV);
             
-            const loadTime = Date.now() - startTime;
             currentData.lastUpdate = new Date().toLocaleString();
             
             renderAll();
             
-            statusDiv.innerHTML = `✅ Загружено`;
+            statusDiv.innerHTML = '✅ Данные загружены';
             statusDiv.className = 'status status-success';
             lastUpdateDiv.innerHTML = `Обновлено: ${currentData.lastUpdate}`;
             
