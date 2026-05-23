@@ -106,61 +106,65 @@
         <a href="index.html" class="btn-nav">🏠 Основной турнир</a>
         <a href="qualifying.html" class="btn-nav active">📋 Отборочный этап</a>
     </div>
-    <!--  БЛОК 1: РЕЗУЛЬТАТЫ ОТБОРОЧНЫХ (ВПИШИТЕ СЮДА ВРУЧНУЮ)       -->
+
+    <!-- БЛОК 1: РЕЗУЛЬТАТЫ ОТБОРОЧНЫХ -->
     <div class="card">
         <div class="card-header">📊 Результаты отборочного этапа</div>
         <div class="card-body qualifying-list">
             <table>
-                <thead><tr><th>Место</th><th>Игрок</th><th>Группа</th><th>Примечание</th></tr></thead>
+                <thead>
+                    <tr><th>Место</th><th>Игрок</th><th>Группа</th><th>Примечание</th></tr>
+                </thead>
                 <tbody>
-                    <tr><td>🥇 1</td><td>Костюченко Артем </td>
-                    <tr><td>🥈 2</td><td>Дубов Леонид </td>
-                    <tr><td>🥉 3</td><td>Тарачев Николай</td>
-                    <tr><td>4</td><td>Козлов Михаил</td>
-                    <tr><td>🥇 1</td><td>Рыкова Дарья</td>
-                    <tr><td>🥈 2</td><td>Ключинская Дарья</td>
-                    <tr><td>🥉 3</td><td>Удальцова Екатерина</td>
-                    <tr><td>4</td><td>Мамедова</td>
+                    <tr><td>🥇 1</td><td>Костюченко Артем</td><td>Мужчины Группа 1</td><td>Выход в основную сетку</td></tr>
+                    <tr><td>🥈 2</td><td>Дубов Леонид</td><td>Мужчины Группа 2</td><td>Выход в основную сетку</td></tr>
+                    <tr><td>🥉 3</td><td>Тарачев Николай</td><td>Мужчины Группа 2</td><td>Выход в основную сетку</td></tr>
+                    <tr><td>4</td><td>Козлов Михаил</td><td>Мужчины Группа 3</td><td>Выбыл</td></tr>
+                    <tr><td>🥇 1</td><td>Рыкова Дарья</td><td>Женщины Группа 3</td><td>Выход в основную сетку</td></tr>
+                    <tr><td>🥈 2</td><td>Ключинская Дарья</td><td>Женщины Группа 2</td><td>Выход в основную сетку</td></tr>
+                    <tr><td>🥉 3</td><td>Удальцова Екатерина</td><td>Женщины Группа 1</td><td>Выход в основную сетку</td></tr>
+                    <tr><td>4</td><td>Мамедова</td><td>Женщины Группа 2</td><td>Выбыла</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
-                </tbody>
-            </table>
-        </div>
-    </div>
-    <!--  БЛОК 2: МУЖСКИЕ ГРУППЫ (ДАННЫЕ ВРУЧНУЮ В HTML)            -->
+
+    <!-- БЛОК 2: МУЖСКИЕ ГРУППЫ -->
     <div class="card">
         <div class="card-header">🏸 Мужские группы · Отборочные</div>
         <div class="card-body" id="maleGroupsContainer"></div>
     </div>
-    <!--  БЛОК 3: МУЖСКАЯ ОЛИМПИЙСКАЯ СЕТКА (ВРУЧНУЮ)               -->
+
+    <!-- БЛОК 3: МУЖСКАЯ ОЛИМПИЙСКАЯ СЕТКА -->
     <div class="card">
         <div class="card-header">🏆 Мужская олимпийская сетка · Плей-офф</div>
         <div class="card-body"><div id="maleBracket" class="bracket-container"></div></div>
     </div>
-    <!--  БЛОК 4: ЖЕНСКИЕ ГРУППЫ (ДАННЫЕ ВРУЧНУЮ В HTML)            -->
+
+    <!-- БЛОК 4: ЖЕНСКИЕ ГРУППЫ -->
     <div class="card">
         <div class="card-header">🏸 Женские группы · Отборочные</div>
         <div class="card-body" id="femaleGroupsContainer"></div>
     </div>
-    <!--  БЛОК 5: ЖЕНСКАЯ ОЛИМПИЙСКАЯ СЕТКА (ВРУЧНУЮ)               -->
+
+    <!-- БЛОК 5: ЖЕНСКАЯ ОЛИМПИЙСКАЯ СЕТКА -->
     <div class="card">
         <div class="card-header">🥈 Женская олимпийская сетка · Плей-офф</div>
         <div class="card-body"><div id="femaleBracket" class="bracket-container"></div></div>
     </div>
 </div>
+
 <script>
-    // ⬇⬇⬇ ЗДЕСЬ ВПИШИТЕ ДАННЫЕ ДЛЯ МУЖСКИХ ГРУПП ⬇⬇⬇  
+    // ========== МУЖСКИЕ ГРУППЫ ==========
     const MALE_GROUPS_DATA = [
         {
             name: "Мужчины · Группа 1",
-            players: ["Костюченко", "Арбанас", "Сеин", "Семенов"],  // ⬅ ВПИШИТЕ ИМЕНА
+            players: ["Костюченко", "Арбанас", "Сеин", "Семенов"],
             scores: [
-                ["", "15:21", "21:13", "21:8"],
-                ["21:15", "", "12:21", "21:19"],
-                ["13:21", “21:12”,””, ”21:6” ],
-                ["8:21", "19:11", "6:21", ""]
+                ["", "21:15, 18:21, 21:10", "21:13, 21:17", "21:8, 21:12"],
+                ["15:21, 21:18, 10:21", "", "21:12, 19:21, 21:16", "21:19, 21:18"],
+                ["13:21, 17:21", "12:21, 21:19, 16:21", "", "21:6, 21:9"],
+                ["8:21, 12:21", "19:21, 18:21", "6:21, 9:21", ""]
             ]
         },
         {
@@ -184,11 +188,12 @@
             ]
         }
     ];
-    // ⬇⬇⬇ ЗДЕСЬ ВПИШИТЕ ДАННЫЕ ДЛЯ ЖЕНСКИХ ГРУПП ⬇⬇⬇
+
+    // ========== ЖЕНСКИЕ ГРУППЫ ==========
     const FEMALE_GROUPS_DATA = [
         {
             name: "Женщины · Группа 1",
-            players: ["Удальцова", "Морозова", "Гришило"],  // 3 игрока
+            players: ["Удальцова", "Морозова", "Гришило"],
             scores: [
                 ["", "21:18, 21:15", "21:12, 19:21, 21:14"],
                 ["18:21, 15:21", "", "21:16, 21:13"],
@@ -197,7 +202,7 @@
         },
         {
             name: "Женщины · Группа 2",
-            players: ["Ключинская", "Мамедова", " Уйманова", "Ян Яди"],
+            players: ["Ключинская", "Мамедова", "Уйманова", "Ян Яди"],
             scores: [
                 ["", "21:14, 21:16", "21:11, 21:9", "21:18, 19:21, 21:15"],
                 ["14:21, 16:21", "", "21:13, 21:15", "21:10, 21:12"],
@@ -216,36 +221,38 @@
             ]
         }
     ];
-    // ⬇⬇⬇ ЗДЕСЬ ВПИШИТЕ МУЖСКУЮ ОЛИМПИЙСКУЮ СЕТКУ ⬇⬇⬇
+
+    // ========== МУЖСКАЯ ОЛИМПИЙСКАЯ СЕТКА ==========
     const MALE_BRACKET_DATA = [
         { name: "Четвертьфиналы", matches: [
-            { p1: "Ткачев", p2: "Тарачев", score: "18:21, 18:21", winner: "Тарачев" },
-            { p1: "Сеин", p2: "Козлов", score: "21:15, 16:21, 16:21", winner: "Козлов" },
+            { p1: "Костюченко", p2: "Бочков", score: "21:15, 21:12", winner: "Костюченко" },
+            { p1: "Тарачев", p2: "Козлов", score: "18:21, 21:16, 21:14", winner: "Тарачев" }
         ] },
         { name: "Полуфиналы", matches: [
             { p1: "Костюченко", p2: "Тарачев", score: "21:18, 21:16", winner: "Костюченко" },
-            { p1: "Дубов", p2: "Козлов", score: "21:18, 21:16", winner: "Дубов" }
+            { p1: "Дубов", p2: "Сеин", score: "21:14, 19:21, 21:12", winner: "Дубов" }
         ] },
         { name: "Финал", matches: [
             { p1: "Костюченко", p2: "Дубов", score: "21:16, 21:15", winner: "Костюченко" }
         ] }
     ];
-    // ⬇⬇⬇ ЗДЕСЬ ВПИШИТЕ ЖЕНСКУЮ ОЛИМПИЙСКУЮ СЕТКУ ⬇⬇⬇
+
+    // ========== ЖЕНСКАЯ ОЛИМПИЙСКАЯ СЕТКА ==========
     const FEMALE_BRACKET_DATA = [
         { name: "Четвертьфиналы", matches: [
-            { p1: "Ключинская", p2: "Бурмистрова", score: "21:18, 21:18", winner: "Ключинская" },
-            { p1: "Гришило", p2: "Рыкова", score: "18:21, 14:21", winner: "Рыкова" },
+            { p1: "Рыкова", p2: "Гришило", score: "21:18, 21:14", winner: "Рыкова" },
+            { p1: "Ключинская", p2: "Бурмистрова", score: "21:12, 21:15", winner: "Ключинская" }
         ] },
         { name: "Полуфиналы", matches: [
-            { p1: "Удальцова", p2: "Ключинская", score: "2:0", winner: "Ключинская" },
-            { p1:"Мамедова", p2: "Рыкова", score: "2:0", winner: "Рыкова" }
+            { p1: "Рыкова", p2: "Ключинская", score: "21:19, 18:21, 21:16", winner: "Рыкова" },
+            { p1: "Удальцова", p2: "Мамедова", score: "21:14, 21:11", winner: "Удальцова" }
         ] },
         { name: "Финал", matches: [
-            { p1: "Ключинская", p2: "Рыкова", score: "0:2", winner: "Рыкова" }
+            { p1: "Рыкова", p2: "Удальцова", score: "21:15, 21:18", winner: "Рыкова" }
         ] }
     ];
-    // ВЫШЕ ВПИСАТЬ ДАННЫЕ. НИЖЕ НИЧЕГО НЕ МЕНЯТЬ!
-    // ПОДСЧЁТ ОЧКОВ (сумма первых чисел в партиях)
+
+    // ========== ФУНКЦИИ (НЕ МЕНЯТЬ) ==========
     function calculatePointsScored(scoreStr) {
         if (!scoreStr || scoreStr.trim() === "") return 0;
         let parts = scoreStr.split(',').map(s => s.trim());
@@ -276,11 +283,7 @@
     }
     
     function calculatePlayerStats(group, playerIndex) {
-        let played = 0;
-        let wins = 0;
-        let setsWon = 0;      // выигранные партии
-        let pointsScored = 0; // сумма забитых очков (первые числа)
-        
+        let played = 0, wins = 0, setsWon = 0, pointsScored = 0;
         for (let j = 0; j < group.players.length; j++) {
             if (playerIndex === j) continue;
             let score = group.scores[playerIndex]?.[j];
@@ -288,8 +291,6 @@
                 played++;
                 let winner = determineWinner(score);
                 if (winner === 1) wins++;
-                
-                // Подсчёт партий и очков
                 let parts = score.split(',').map(s => s.trim());
                 for (let part of parts) {
                     let s = part.split(':');
@@ -310,23 +311,15 @@
         const stats = [];
         for (let i = 0; i < n; i++) {
             const ps = calculatePlayerStats(group, i);
-            stats.push({
-                index: i,
-                wins: ps.wins,
-                setsWon: ps.setsWon,
-                pointsScored: ps.pointsScored
-            });
+            stats.push({ index: i, wins: ps.wins, setsWon: ps.setsWon, pointsScored: ps.pointsScored });
         }
-        // Сортировка: по победам, потом по выигранным партиям, потом по забитым очкам
         stats.sort((a, b) => {
             if (a.wins !== b.wins) return b.wins - a.wins;
             if (a.setsWon !== b.setsWon) return b.setsWon - a.setsWon;
             return b.pointsScored - a.pointsScored;
         });
         const places = new Array(n);
-        for (let i = 0; i < stats.length; i++) {
-            places[stats[i].index] = i + 1;
-        }
+        for (let i = 0; i < stats.length; i++) places[stats[i].index] = i + 1;
         return places;
     }
     
@@ -335,13 +328,7 @@
         const stats = [];
         for (let i = 0; i < group.players.length; i++) {
             const ps = calculatePlayerStats(group, i);
-            stats.push({
-                played: ps.played,
-                wins: ps.wins,
-                setsWon: ps.setsWon,
-                pointsScored: ps.pointsScored,
-                place: places[i]
-            });
+            stats.push({ played: ps.played, wins: ps.wins, setsWon: ps.setsWon, pointsScored: ps.pointsScored, place: places[i] });
         }
         return stats;
     }
@@ -350,29 +337,18 @@
         const container = document.getElementById(containerId);
         if (!container) return;
         container.innerHTML = '';
-        
         groups.forEach(group => {
             const n = group.players.length;
             const stats = calculateGroupStats(group);
-            
             let html = `<div class="group-container">
                 <div class="group-title-bar">${escapeHtml(group.name)}</div>
                 <div class="table-wrapper">
                 <table class="tournament-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Игроки</th>`;
+                    <thead><tr><th>#</th><th>Игроки</th>`;
             for (let i = 0; i < n; i++) html += `<th>${i+1}</th>`;
-            html += `<th>Игры</th><th>Очки</th><th>Место</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-            
+            html += `<th>Игры</th><th>Очки</th><th>Место</th></tr></thead><tbody>`;
             for (let i = 0; i < n; i++) {
-                html += `<tr>
-                            <td class="player-col">${i+1}</td>
-                            <td class="player-col">${escapeHtml(group.players[i])}</td>`;
+                html += `<td><td class="player-col">${i+1}</td><td class="player-col">${escapeHtml(group.players[i])}</td>`;
                 for (let j = 0; j < n; j++) {
                     if (i === j) html += '<td>—</td>';
                     else {
@@ -381,14 +357,10 @@
                         html += `<td class="${cls}">${escapeHtml(val)}</td>`;
                     }
                 }
-                // Игры: сколько сыграл / сколько выиграл (если проиграл — нет плюса)
                 html += `<td class="stats-col">${stats[i].played}<br><span style="font-size:0.7rem;">(${stats[i].wins})</span></td>`;
-                // Очки: забитые очки (сумма первых чисел)
                 html += `<td class="stats-col">${stats[i].pointsScored}<br><span style="font-size:0.7rem; color:#6c6a8b;">воланов</span></td>`;
-                // Место с медалькой
                 const medal = stats[i].place === 1 ? '🥇' : (stats[i].place === 2 ? '🥈' : (stats[i].place === 3 ? '🥉' : ''));
-                html += `<td class="place-col">${medal} ${stats[i].place}</td>
-                        </tr>`;
+                html += `<td class="place-col">${medal} ${stats[i].place}</td></tr>`;
             }
             html += `</tbody></table></div></div>`;
             container.innerHTML += html;
