@@ -6,13 +6,39 @@
     <title>Первенство МИФИ | Турнир</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #bfbfdb; padding: 20px 12px 40px; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #bfbfdb;
+            padding: 20px 12px 40px;
+        }
         .container { max-width: 1400px; margin: 0 auto; }
-        .card { background: white; border-radius: 32px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); margin-bottom: 28px; overflow: hidden; }
-        .card-header { background: #0b0829; color: white; padding: 16px 20px; font-size: 1.3rem; font-weight: 700; }
+        .card {
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            margin-bottom: 28px;
+            overflow: hidden;
+        }
+        .card-header {
+            background: #0b0829;
+            color: white;
+            padding: 16px 20px;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
         .card-body { padding: 20px; }
-        .group-container { background: #fefefe; border-radius: 24px; margin-bottom: 30px; border: 1px solid #e0ddf5; }
-        .group-title-bar { background: #eae9fc; padding: 12px 20px; font-weight: 700; font-size: 1.1rem; }
+        .group-container {
+            background: #fefefe;
+            border-radius: 24px;
+            margin-bottom: 30px;
+            border: 1px solid #e0ddf5;
+        }
+        .group-title-bar {
+            background: #eae9fc;
+            padding: 12px 20px;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
         .table-wrapper { overflow-x: auto; padding: 16px; }
         .tournament-table {
             width: 100%;
@@ -79,7 +105,6 @@
         <p style="color: #4a457a;">Актуальные результаты турнира</p>
     </div>
 
-    <!-- НАВИГАЦИЯ МЕЖДУ СТРАНИЦАМИ -->
     <div class="nav-buttons">
         <a href="index.html" class="btn-nav active">🏠 Основной турнир</a>
         <a href="qualifying.html" class="btn-nav">📋 Отборочный этап</a>
@@ -89,6 +114,7 @@
         <button id="refreshBtn" class="btn-primary">🔄 Обновить данные</button>
         <div id="status" class="status"></div>
         <div id="lastUpdate" class="status" style="font-size:0.7rem;"></div>
+        <div class="force-refresh-hint">💡 Если данные старые — нажмите Ctrl+F5 (полное обновление)</div>
     </div>
 
     <div id="content"></div>
@@ -104,43 +130,66 @@
     
     let currentData = { maleGroups: [], femaleGroups: [], maleBracketStages: [], femaleBracketStages: [] };
     
-    // ========== НОВАЯ ФУНКЦИЯ: ПОДСЧЁТ ЗАБИТЫХ ВОЛАНОВ (сумма первых чисел) ==========
-    function calculatePointsScored(scoreStr) {
-        if (!scoreStr || scoreStr.trim() === "") return 0;
+    // ========== УНИВЕРСАЛЬНЫЙ ПАРСИНГ СЧЁТА ==========
+    // Поддерживает форматы:
+    // - "21:15" (одна партия)
+    // - "21:15, 21:18" (две партии)
+    // - "21:15, 18:21, 21:10" (три партии)
+    // - "21:15,21:18" (без пробела)
+    function parseScore(scoreStr) {
+        if (!scoreStr || scoreStr.trim() === "") return [];
+        // Разделяем по запятой, убираем лишние пробелы
         let parts = scoreStr.split(',').map(s => s.trim());
+        let results = [];
+        for (let part of parts) {
+            // Ищем числа в формате "число:число"
+            let match = part.match(/(\d+):(\d+)/);
+            if (match) {
+                results.push({
+                    p1: parseInt(match[1]),
+                    p2: parseInt(match[2])
+                });
+            }
+        }
+        return results;
+    }
+    
+    // Подсчёт забитых очков (сумма первых чисел)
+    function calculatePointsScored(scoreStr) {
+        let parts = parseScore(scoreStr);
         let total = 0;
         for (let part of parts) {
-            let s = part.split(':');
-            if (s.length === 2) {
-                total += parseInt(s[0]) || 0;
-            }
+            total += part.p1;
         }
         return total;
     }
     
+    // Определение победителя (по количеству выигранных партий)
     function determineWinner(scoreStr) {
-        if (!scoreStr || scoreStr.trim() === "") return null;
-        let parts = scoreStr.split(',').map(s => s.trim());
+        let parts = parseScore(scoreStr);
+        if (parts.length === 0) return null;
         let p1Wins = 0, p2Wins = 0;
         for (let part of parts) {
-            let s = part.split(':');
-            if (s.length === 2) {
-                if (parseInt(s[0]) > parseInt(s[1])) p1Wins++;
-                else if (parseInt(s[1]) > parseInt(s[0])) p2Wins++;
-            }
+            if (part.p1 > part.p2) p1Wins++;
+            else if (part.p2 > part.p1) p2Wins++;
         }
         if (p1Wins > p2Wins) return 1;
         if (p2Wins > p1Wins) return 2;
         return null;
     }
     
-    // ========== ИСПРАВЛЕННАЯ СТАТИСТИКА: pointsScored вместо pointsDiff ==========
-    function calculatePlayerStats(group, playerIndex) {
-        let played = 0;
+    // Получение количества выигранных партий игроком 1
+    function getSetsWon(scoreStr) {
+        let parts = parseScore(scoreStr);
         let wins = 0;
-        let setsWon = 0;
-        let pointsScored = 0;  // ← теперь сумма забитых воланов
-        
+        for (let part of parts) {
+            if (part.p1 > part.p2) wins++;
+        }
+        return wins;
+    }
+    
+    function calculatePlayerStats(group, playerIndex) {
+        let played = 0, wins = 0, setsWon = 0, pointsScored = 0;
         for (let j = 0; j < group.players.length; j++) {
             if (playerIndex === j) continue;
             let score = group.scores[playerIndex]?.[j];
@@ -148,67 +197,36 @@
                 played++;
                 let winner = determineWinner(score);
                 if (winner === 1) wins++;
-                
-                // Считаем выигранные партии
-                let parts = score.split(',').map(s => s.trim());
-                for (let part of parts) {
-                    let s = part.split(':');
-                    if (s.length === 2) {
-                        let myScore = parseInt(s[0]);
-                        let oppScore = parseInt(s[1]);
-                        if (myScore > oppScore) setsWon++;
-                        pointsScored += myScore;  // ← суммируем забитые очки
-                    }
-                }
+                setsWon += getSetsWon(score);
+                pointsScored += calculatePointsScored(score);
             }
         }
         return { played, wins, setsWon, pointsScored };
     }
     
-    // ========== ОПРЕДЕЛЕНИЕ МЕСТ ==========
     function calculatePlaces(group) {
         const n = group.players.length;
         const stats = [];
-        
         for (let i = 0; i < n; i++) {
-            const playerStats = calculatePlayerStats(group, i);
-            stats.push({
-                index: i,
-                name: group.players[i],
-                wins: playerStats.wins,
-                setsWon: playerStats.setsWon,
-                pointsScored: playerStats.pointsScored
-            });
+            const ps = calculatePlayerStats(group, i);
+            stats.push({ index: i, wins: ps.wins, setsWon: ps.setsWon, pointsScored: ps.pointsScored });
         }
-        
-        // Сортировка: по победам → по выигранным партиям → по забитым очкам
         stats.sort((a, b) => {
             if (a.wins !== b.wins) return b.wins - a.wins;
             if (a.setsWon !== b.setsWon) return b.setsWon - a.setsWon;
             return b.pointsScored - a.pointsScored;
         });
-        
         const places = new Array(n);
-        for (let i = 0; i < stats.length; i++) {
-            places[stats[i].index] = i + 1;
-        }
+        for (let i = 0; i < stats.length; i++) places[stats[i].index] = i + 1;
         return places;
     }
     
     function calculateGroupStats(group) {
-        const n = group.players.length;
         const places = calculatePlaces(group);
         const stats = [];
-        
-        for (let i = 0; i < n; i++) {
-            const playerStats = calculatePlayerStats(group, i);
-            stats.push({
-                played: playerStats.played,
-                wins: playerStats.wins,
-                setsWon: playerStats.setsWon,
-                pointsScored: playerStats.pointsScored,
-                place: places[i]
-            });
+        for (let i = 0; i < group.players.length; i++) {
+            const ps = calculatePlayerStats(group, i);
+            stats.push({ played: ps.played, wins: ps.wins, setsWon: ps.setsWon, pointsScored: ps.pointsScored, place: places[i] });
         }
         return stats;
     }
@@ -375,9 +393,7 @@
                         html += `<td class="${cls}">${escapeHtml(val)}</td>`;
                     }
                 }
-                // Игры: сколько сыграл / сколько выиграл (без плюса)
                 html += `<td class="stats-col">${stats[i].played}<br><span style="font-size:0.7rem;">(${stats[i].wins})</span></td>`;
-                // Очки: сумма забитых воланов
                 html += `<td class="stats-col">${stats[i].pointsScored}<br><span style="font-size:0.7rem; color:#6c6a8b;">воланов</span></td>`;
                 const medal = stats[i].place === 1 ? '🥇' : (stats[i].place === 2 ? '🥈' : (stats[i].place === 3 ? '🥉' : ''));
                 html += `<td class="place-col">${medal} ${stats[i].place}</td>
@@ -489,8 +505,6 @@
     }
     
     document.getElementById('refreshBtn').addEventListener('click', loadAllData);
-    
-    // Загружаем данные при открытии страницы
     loadAllData();
 </script>
 </body>
