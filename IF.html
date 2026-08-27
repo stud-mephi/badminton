@@ -102,7 +102,6 @@
         <button id="refreshBtn" class="btn-primary">🔄 Обновить данные</button>
         <div id="status" class="status"></div>
         <div id="lastUpdate" class="status" style="font-size:0.7rem;"></div>
-        <div id="debugInfo" class="debug-info">⏳ Нажмите «Обновить данные»</div>
     </div>
 
     <div id="content"></div>
@@ -291,71 +290,42 @@
     }
     
     // ========== УПРОЩЁННЫЙ ПАРСИНГ ПЛЕЙ-ОФФ (как группы) ==========
+    
     function parseBracket(csvText) {
         const rows = parseCSV(csvText);
-        const debugDiv = document.getElementById('debugInfo');
+        const quarterfinals = [];
+        const semifinals = [];
+        const finals = [];
         
-        if (debugDiv) {
-            debugDiv.innerHTML = `📊 Плей-офф: получено ${rows.length} строк`;
-            if (rows.length > 0) {
-                let preview = rows.slice(0, 3).map(row => row.join(' | ')).join('; ');
-                debugDiv.innerHTML += ` | Первые 3: ${preview}`;
-            }
-        }
-        
-        if (rows.length < 2) {
-            return [];
-        }
-        
-        const stages = [];
-        let currentStage = null;
-        let currentMatches = [];
+        if (rows.length < 2) return [
+            { name: "Четвертьфиналы", matches: [] },
+            { name: "Полуфиналы", matches: [] },
+            { name: "Финал", matches: [] }
+        ];
         
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
-            if (!row || row.length === 0) continue;
+            if (!row[0] || row[0].trim() === "") continue;
             
-            // Проверяем первую ячейку
-            const firstCell = row[0] ? row[0].trim() : '';
-            if (!firstCell) continue;
+            const stageName = row[0].trim().toLowerCase();
+            const match = {
+                p1: row[1] || "",
+                p2: row[2] || "",
+                score: row[3] || "",
+                winner: row[4] || ""
+            };
             
-            // Проверяем, является ли это названием стадии
-            // Стадия — это текст без двоеточия, содержащий буквы
-            const isStage = /[А-Яа-я]/.test(firstCell) && !firstCell.includes(':') && !/^\d+$/.test(firstCell);
-            
-            if (isStage) {
-                // Сохраняем предыдущую стадию
-                if (currentStage && currentMatches.length > 0) {
-                    stages.push({ name: currentStage, matches: currentMatches });
-                }
-                currentStage = firstCell;
-                currentMatches = [];
-            } else if (currentStage) {
-                // Это матч — берём все непустые ячейки
-                const p1 = row[1] ? row[1].trim() : '';
-                const p2 = row[2] ? row[2].trim() : '';
-                const score = row[3] ? row[3].trim() : '';
-                const winner = row[4] ? row[4].trim() : '';
-                
-                // Добавляем матч, если есть хоть одна пара
-                if (p1 || p2) {
-                    currentMatches.push({ p1, p2, score, winner });
-                }
-            }
+            if (stageName.includes('четвертьфинал')) quarterfinals.push(match);
+            else if (stageName.includes('полуфинал')) semifinals.push(match);
+            else if (stageName.includes('финал')) finals.push(match);
         }
         
-        // Добавляем последнюю стадию
-        if (currentStage && currentMatches.length > 0) {
-            stages.push({ name: currentStage, matches: currentMatches });
-        }
-        
-        if (debugDiv) {
-            debugDiv.innerHTML += ` | Найдено стадий: ${stages.length}, матчей: ${stages.reduce((sum, s) => sum + s.matches.length, 0)}`;
-        }
-        
-        return stages;
+        return [
+            { name: "Четвертьфиналы", matches: quarterfinals },
+            { name: "Полуфиналы", matches: semifinals },
+            { name: "Финал", matches: finals }
+        ];
     }
-    
     function renderGroups(groups, containerId) {
         const container = document.getElementById(containerId);
         if (!container) return;
@@ -411,11 +381,6 @@
         const container = document.getElementById(containerId);
         if (!container) return;
         container.innerHTML = '';
-        
-        if (stages.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding:40px; color:#888;">📭 Нет данных для плей-офф</div>';
-            return;
-        }
         
         stages.forEach(stage => {
             if (stage.matches.length === 0) return;
