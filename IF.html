@@ -490,15 +490,8 @@
             const cacheBuster = '&_cb=' + Date.now() + '_' + Math.random();
             const response = await fetch(url + cacheBuster);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const text = await response.text();
-            if (debugDiv) {
-                debugDiv.innerHTML += ` | ✅ ${name}: ${text.length} символов`;
-            }
-            return text;
+            return await response.text();
         } catch (e) {
-            if (debugDiv) {
-                debugDiv.innerHTML += ` | ❌ ${name}: ${e.message}`;
-            }
             console.error(`Ошибка ${name}:`, e);
             return '';
         }
@@ -507,11 +500,9 @@
     async function loadAllData() {
         const statusDiv = document.getElementById('status');
         const lastUpdateDiv = document.getElementById('lastUpdate');
-        const debugDiv = document.getElementById('debugInfo');
         
         statusDiv.innerHTML = '⏳ Загрузка данных...';
         statusDiv.className = 'status status-info';
-        debugDiv.innerHTML = '⏳ Подключение...';
         
         try {
             const [groupsCSV, bracketCSV] = await Promise.all([
