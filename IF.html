@@ -31,23 +31,17 @@
             align-items: center;
             transition: background 0.2s;
         }
-        .card-header:hover {
-            background: #1a1745;
-        }
+        .card-header:hover { background: #1a1745; }
         .card-header .arrow {
             font-size: 1.2rem;
             transition: transform 0.3s;
         }
-        .card-header .arrow.rotated {
-            transform: rotate(180deg);
-        }
+        .card-header .arrow.rotated { transform: rotate(180deg); }
         .card-body {
             padding: 20px;
             display: none;
         }
-        .card-body.open {
-            display: block;
-        }
+        .card-body.open { display: block; }
         .group-container {
             background: #fefefe;
             border-radius: 24px;
@@ -78,28 +72,6 @@
         .win-cell { background-color: #c8f0d1 !important; }
         .stats-col { background: #f5f3ff; font-weight: 600; }
         .place-col { font-weight: 700; background: #e8e5fc; }
-        .nav-buttons {
-            display: flex;
-            gap: 16px;
-            justify-content: center;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-        }
-        .btn-nav {
-            background: #0b0829;
-            color: white;
-            border: none;
-            padding: 12px 28px;
-            border-radius: 40px;
-            font-weight: bold;
-            font-size: 1rem;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            transition: transform 0.2s;
-        }
-        .btn-nav:hover { transform: translateY(-2px); }
-        .btn-nav.active { background: #2b6e3c; }
         .refresh-panel { background: #f8f7fc; border-radius: 32px; padding: 18px; margin-bottom: 24px; border: 2px solid #cbc8e0; text-align: center; }
         .btn-primary { background: #0b0829; color: white; border: none; padding: 10px 24px; border-radius: 40px; font-weight: bold; cursor: pointer; }
         .status { font-size: 0.75rem; margin-top: 10px; padding: 6px; border-radius: 30px; }
@@ -116,7 +88,9 @@
         .match-score { text-align: center; background: #f1efff; padding: 8px; border-radius: 30px; font-family: monospace; }
         .winner-badge { background: #0b0829; color: white; padding: 6px; border-radius: 40px; text-align: center; font-size: 0.75rem; margin-top: 8px; }
         @media (min-width: 768px) { .bracket-container { flex-direction: row; flex-wrap: wrap; } .bracket-stage { flex: 1; } }
-        .force-refresh-hint { font-size: 0.7rem; color: #6c6a8b; margin-top: 8px; }
+        .debug-info { font-size: 0.7rem; color: #6c6a8b; margin-top: 8px; word-break: break-all; max-height: 100px; overflow-y: auto; background: #f5f4ff; padding: 8px; border-radius: 12px; }
+        .debug-info .error { color: #b91c1c; }
+        .debug-info .success { color: #2b6e3c; }
     </style>
 </head>
 <body>
@@ -130,13 +104,14 @@
         <button id="refreshBtn" class="btn-primary">🔄 Обновить данные</button>
         <div id="status" class="status"></div>
         <div id="lastUpdate" class="status" style="font-size:0.7rem;"></div>
+        <div id="debugInfo" class="debug-info">⏳ Нажмите «Обновить данные»</div>
     </div>
 
     <div id="content"></div>
 </div>
 
 <script>
-    // ========== ССЫЛКИ НА GOOGLE ТАБЛИЦЫ ==========
+    // ========== ВАШИ ССЫЛКИ (РАБОТАЮТ) ==========
     const SHEETS = {
         groups: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS3fQ-kSpefkrYNlSsTLKHd4D7oP0ATxubl18w_4LjBA_bfnEsfYE-UwiXkShxWmNSXm0F8095BeGBy/pub?gid=0&single=true&output=csv',
         bracket: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS3fQ-kSpefkrYNlSsTLKHd4D7oP0ATxubl18w_4LjBA_bfnEsfYE-UwiXkShxWmNSXm0F8095BeGBy/pub?gid=754181403&single=true&output=csv'
@@ -317,49 +292,68 @@
         return groups;
     }
     
+    // ========== НОВАЯ ФУНКЦИЯ ПАРСИНГА ПЛЕЙ-ОФФ ==========
     function parseBracket(csvText) {
         const rows = parseCSV(csvText);
+        const debugDiv = document.getElementById('debugInfo');
+        
+        // Показываем первые 5 строк для отладки
+        if (debugDiv && rows.length > 0) {
+            let preview = rows.slice(0, 5).map(row => row.join(' | ')).join('; ');
+            debugDiv.innerHTML = `📊 Получено ${rows.length} строк. Первые 5: ${preview}`;
+        }
+        
+        if (rows.length < 2) {
+            return [];
+        }
+        
         const stages = [];
-        
-        if (rows.length < 2) return [
-            { name: "Четвертьфиналы", matches: [] },
-            { name: "Полуфиналы", matches: [] },
-            { name: "Финал", matches: [] }
-        ];
-        
-        // Собираем все матчи по стадиям
         let currentStage = null;
         let currentMatches = [];
         
+        // Пропускаем заголовок (строка 0)
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
-            if (!row[0] || row[0].trim() === "") continue;
+            if (!row || row.length === 0) continue;
             
-            const stageName = row[0].trim();
-            const match = {
-                p1: row[1] || "",
-                p2: row[2] || "",
-                score: row[3] || "",
-                winner: row[4] || ""
-            };
+            // Проверяем первую ячейку
+            const firstCell = row[0] ? row[0].trim() : '';
+            if (!firstCell) continue;
             
-            // Если это название стадии (не начинается с цифры и не пустое)
-            if (stageName.match(/[А-Яа-я]/) && !stageName.match(/^\d/)) {
+            // Проверяем, является ли это названием стадии
+            // Стадия — это текст без двоеточия, содержащий буквы
+            const isStage = /[А-Яа-я]/.test(firstCell) && !firstCell.includes(':') && !/^\d+$/.test(firstCell);
+            
+            if (isStage) {
                 // Сохраняем предыдущую стадию
                 if (currentStage && currentMatches.length > 0) {
                     stages.push({ name: currentStage, matches: currentMatches });
                 }
-                currentStage = stageName;
+                currentStage = firstCell;
                 currentMatches = [];
-            } else if (currentStage && row[1] && row[1].trim() !== "") {
-                // Это матч
-                currentMatches.push(match);
+            } else if (currentStage) {
+                // Это матч — берём все непустые ячейки
+                const p1 = row[1] ? row[1].trim() : '';
+                const p2 = row[2] ? row[2].trim() : '';
+                const score = row[3] ? row[3].trim() : '';
+                const winner = row[4] ? row[4].trim() : '';
+                
+                // Добавляем матч, если есть хоть одна пара
+                if (p1 || p2) {
+                    currentMatches.push({ p1, p2, score, winner });
+                }
             }
         }
         
         // Добавляем последнюю стадию
         if (currentStage && currentMatches.length > 0) {
             stages.push({ name: currentStage, matches: currentMatches });
+        }
+        
+        if (debugDiv && stages.length > 0) {
+            debugDiv.innerHTML += ` | ✅ Найдено стадий: ${stages.length}`;
+        } else if (debugDiv && stages.length === 0) {
+            debugDiv.innerHTML += ' | ⚠️ Не найдено ни одной стадии. Проверьте формат таблицы.';
         }
         
         return stages;
@@ -421,6 +415,11 @@
         if (!container) return;
         container.innerHTML = '';
         
+        if (stages.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:40px; color:#888;">📭 Нет данных для плей-офф</div>';
+            return;
+        }
+        
         stages.forEach(stage => {
             if (stage.matches.length === 0) return;
             
@@ -460,7 +459,6 @@
         `;
     }
     
-    // Функция для переключения видимости
     window.toggleAccordion = function(contentId) {
         const body = document.getElementById(contentId);
         const arrow = document.getElementById(`arrow-${contentId}`);
@@ -475,13 +473,11 @@
     function renderAll() {
         const content = document.getElementById('content');
         
-        // Создаём карточки-аккордеоны
         content.innerHTML = `
             ${createAccordionCard('🏸 Групповой этап', 'groupsSection', true)}
             ${createAccordionCard('🏆 Плей-офф', 'bracketSection', false)}
         `;
         
-        // Заполняем содержимое
         renderGroups(currentData.groups, 'groupsSection-inner');
         renderBracket(currentData.bracketStages, 'bracketSection-inner');
     }
@@ -492,12 +488,20 @@
     }
     
     async function fetchSheet(url, name) {
+        const debugDiv = document.getElementById('debugInfo');
         try {
             const cacheBuster = '&_cb=' + Date.now() + '_' + Math.random();
             const response = await fetch(url + cacheBuster);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            return await response.text();
+            const text = await response.text();
+            if (debugDiv) {
+                debugDiv.innerHTML += ` | ✅ ${name}: ${text.length} символов`;
+            }
+            return text;
         } catch (e) {
+            if (debugDiv) {
+                debugDiv.innerHTML += ` | ❌ ${name}: ${e.message}`;
+            }
             console.error(`Ошибка ${name}:`, e);
             return '';
         }
@@ -506,14 +510,16 @@
     async function loadAllData() {
         const statusDiv = document.getElementById('status');
         const lastUpdateDiv = document.getElementById('lastUpdate');
+        const debugDiv = document.getElementById('debugInfo');
         
         statusDiv.innerHTML = '⏳ Загрузка данных...';
         statusDiv.className = 'status status-info';
+        debugDiv.innerHTML = '⏳ Подключение...';
         
         try {
             const [groupsCSV, bracketCSV] = await Promise.all([
-                fetchSheet(SHEETS.groups, 'groups'),
-                fetchSheet(SHEETS.bracket, 'bracket')
+                fetchSheet(SHEETS.groups, 'Группы'),
+                fetchSheet(SHEETS.bracket, 'Плей-офф')
             ]);
             
             currentData.groups = parseGroups(groupsCSV);
@@ -523,14 +529,15 @@
             
             renderAll();
             
-            statusDiv.innerHTML = '✅ Данные загружены';
+            statusDiv.innerHTML = `✅ Данные загружены (групп: ${currentData.groups.length}, стадий: ${currentData.bracketStages.length})`;
             statusDiv.className = 'status status-success';
             lastUpdateDiv.innerHTML = `Обновлено: ${currentData.lastUpdate}`;
             
-            setTimeout(() => { if(statusDiv) statusDiv.innerHTML = ''; }, 3000);
+            setTimeout(() => { if(statusDiv) statusDiv.innerHTML = ''; }, 4000);
         } catch (error) {
             statusDiv.innerHTML = '❌ Ошибка загрузки. Проверьте интернет.';
             statusDiv.className = 'status status-error';
+            debugDiv.innerHTML += ` | ❌ Ошибка: ${error.message}`;
         }
     }
     
