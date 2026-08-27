@@ -89,8 +89,6 @@
         .winner-badge { background: #0b0829; color: white; padding: 6px; border-radius: 40px; text-align: center; font-size: 0.75rem; margin-top: 8px; }
         @media (min-width: 768px) { .bracket-container { flex-direction: row; flex-wrap: wrap; } .bracket-stage { flex: 1; } }
         .debug-info { font-size: 0.7rem; color: #6c6a8b; margin-top: 8px; word-break: break-all; max-height: 100px; overflow-y: auto; background: #f5f4ff; padding: 8px; border-radius: 12px; }
-        .debug-info .error { color: #b91c1c; }
-        .debug-info .success { color: #2b6e3c; }
     </style>
 </head>
 <body>
@@ -111,7 +109,7 @@
 </div>
 
 <script>
-    // ========== ВАШИ ССЫЛКИ (РАБОТАЮТ) ==========
+    // ========== ВАШИ РАБОЧИЕ ССЫЛКИ ==========
     const SHEETS = {
         groups: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS3fQ-kSpefkrYNlSsTLKHd4D7oP0ATxubl18w_4LjBA_bfnEsfYE-UwiXkShxWmNSXm0F8095BeGBy/pub?gid=0&single=true&output=csv',
         bracket: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS3fQ-kSpefkrYNlSsTLKHd4D7oP0ATxubl18w_4LjBA_bfnEsfYE-UwiXkShxWmNSXm0F8095BeGBy/pub?gid=754181403&single=true&output=csv'
@@ -292,12 +290,10 @@
         return groups;
     }
     
-    // ========== НОВАЯ ФУНКЦИЯ ПАРСИНГА ПЛЕЙ-ОФФ ==========
     function parseBracket(csvText) {
         const rows = parseCSV(csvText);
         const debugDiv = document.getElementById('debugInfo');
         
-        // Показываем первые 5 строк для отладки
         if (debugDiv && rows.length > 0) {
             let preview = rows.slice(0, 5).map(row => row.join(' | ')).join('; ');
             debugDiv.innerHTML = `📊 Получено ${rows.length} строк. Первые 5: ${preview}`;
@@ -311,41 +307,33 @@
         let currentStage = null;
         let currentMatches = [];
         
-        // Пропускаем заголовок (строка 0)
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
             if (!row || row.length === 0) continue;
             
-            // Проверяем первую ячейку
             const firstCell = row[0] ? row[0].trim() : '';
             if (!firstCell) continue;
             
-            // Проверяем, является ли это названием стадии
-            // Стадия — это текст без двоеточия, содержащий буквы
             const isStage = /[А-Яа-я]/.test(firstCell) && !firstCell.includes(':') && !/^\d+$/.test(firstCell);
             
             if (isStage) {
-                // Сохраняем предыдущую стадию
                 if (currentStage && currentMatches.length > 0) {
                     stages.push({ name: currentStage, matches: currentMatches });
                 }
                 currentStage = firstCell;
                 currentMatches = [];
             } else if (currentStage) {
-                // Это матч — берём все непустые ячейки
                 const p1 = row[1] ? row[1].trim() : '';
                 const p2 = row[2] ? row[2].trim() : '';
                 const score = row[3] ? row[3].trim() : '';
                 const winner = row[4] ? row[4].trim() : '';
                 
-                // Добавляем матч, если есть хоть одна пара
                 if (p1 || p2) {
                     currentMatches.push({ p1, p2, score, winner });
                 }
             }
         }
         
-        // Добавляем последнюю стадию
         if (currentStage && currentMatches.length > 0) {
             stages.push({ name: currentStage, matches: currentMatches });
         }
@@ -444,7 +432,6 @@
         });
     }
     
-    // ========== ФУНКЦИЯ ДЛЯ СОЗДАНИЯ АККОРДЕОНА ==========
     function createAccordionCard(title, contentId, isOpenByDefault = false) {
         return `
             <div class="card">
