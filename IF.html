@@ -515,8 +515,8 @@
         
         try {
             const [groupsCSV, bracketCSV] = await Promise.all([
-                fetchSheet(SHEETS.groups, 'Группы'),
-                fetchSheet(SHEETS.bracket, 'Плей-офф')
+                fetchSheet(SHEETS.groups, 'group'),
+                fetchSheet(SHEETS.bracket, 'bracket')
             ]);
             
             currentData.groups = parseGroups(groupsCSV);
@@ -528,13 +528,8 @@
             
             statusDiv.innerHTML = `✅ Данные загружены (групп: ${currentData.groups.length}, стадий: ${currentData.bracketStages.length})`;
             statusDiv.className = 'status status-success';
-            lastUpdateDiv.innerHTML = `Обновлено: ${currentData.lastUpdate}`;
-            
-            if (currentData.bracketStages.length === 0) {
-                debugDiv.innerHTML += ' | ⚠️ Плей-офф: стадий не найдено. Проверьте формат таблицы.';
-            }
-            
-            setTimeout(() => { if(statusDiv) statusDiv.innerHTML = ''; }, 4000);
+            lastUpdateDiv.innerHTML = `Обновлено: ${currentData.lastUpdate}`;           
+            setTimeout(() => { if(statusDiv) statusDiv.innerHTML = ''; }, 3000);
         } catch (error) {
             statusDiv.innerHTML = '❌ Ошибка загрузки. Проверьте интернет.';
             statusDiv.className = 'status status-error';
