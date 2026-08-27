@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Ядерный фестиваль | Турнир</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #bfbfdb;
+            padding: 20px 12px 40px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .card {
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            margin-bottom: 28px;
+            overflow: hidden;
+        }
+        .card-header {
+            background: #0b0829;
+            color: white;
+            padding: 16px 20px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        .card-header:hover {
+            background: #1a1745;
+        }
+        .card-header .arrow {
+            font-size: 1.2rem;
+            transition: transform 0.3s;
+        }
+        .card-header .arrow.rotated {
+            transform: rotate(180deg);
+        }
+        .card-body {
+            padding: 20px;
+            display: none;
+        }
+        .card-body.open {
+            display: block;
+        }
+        .group-container {
+            background: #fefefe;
+            border-radius: 24px;
+            margin-bottom: 30px;
+            border: 1px solid #e0ddf5;
+        }
+        .group-title-bar {
+            background: #eae9fc;
+            padding: 12px 20px;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        .table-wrapper { overflow-x: auto; padding: 16px; }
+        .tournament-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            min-width: 700px;
+        }
+        .tournament-table th, .tournament-table td {
+            border: 1px solid #d4d4e0;
+            padding: 10px 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .tournament-table th { background: #f5f4ff; font-weight: 700; }
+        .player-col { font-weight: 700; background: #faf9ff; text-align: left !important; }
+        .win-cell { background-color: #c8f0d1 !important; }
+        .stats-col { background: #f5f3ff; font-weight: 600; }
+        .place-col { font-weight: 700; background: #e8e5fc; }
+        .nav-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .btn-nav {
+            background: #0b0829;
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+        .btn-nav:hover { transform: translateY(-2px); }
+        .btn-nav.active { background: #2b6e3c; }
+        .refresh-panel { background: #f8f7fc; border-radius: 32px; padding: 18px; margin-bottom: 24px; border: 2px solid #cbc8e0; text-align: center; }
+        .btn-primary { background: #0b0829; color: white; border: none; padding: 10px 24px; border-radius: 40px; font-weight: bold; cursor: pointer; }
+        .status { font-size: 0.75rem; margin-top: 10px; padding: 6px; border-radius: 30px; }
+        .status-success { background: #d4e0b2; color: #2b6e3c; }
+        .status-error { background: #f0d6d6; color: #b91c1c; }
+        .status-info { background: #e0ddf5; color: #4a3f7a; }
+        .bracket-container { display: flex; flex-direction: column; gap: 24px; }
+        .bracket-stage { background: #faf9ff; border-radius: 24px; padding: 16px; }
+        .stage-title { font-weight: 800; margin-bottom: 16px; padding-left: 12px; border-left: 4px solid #0b0829; }
+        .matches-list { display: flex; flex-direction: column; gap: 16px; }
+        .match-card { background: white; border-radius: 20px; padding: 14px; border: 1px solid #e2defc; }
+        .match-players-row { display: flex; gap: 12px; justify-content: space-between; margin-bottom: 10px; }
+        .match-players-row span { flex: 1; text-align: center; font-weight: 600; }
+        .match-score { text-align: center; background: #f1efff; padding: 8px; border-radius: 30px; font-family: monospace; }
+        .winner-badge { background: #0b0829; color: white; padding: 6px; border-radius: 40px; text-align: center; font-size: 0.75rem; margin-top: 8px; }
+        @media (min-width: 768px) { .bracket-container { flex-direction: row; flex-wrap: wrap; } .bracket-stage { flex: 1; } }
+        .force-refresh-hint { font-size: 0.7rem; color: #6c6a8b; margin-top: 8px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div style="text-align: center; margin-bottom: 20px;">
+        <h1 style="font-size: 2.2rem; background: linear-gradient(135deg,#0b0829,#413a7c); background-clip: text; -webkit-background-clip: text; color: transparent;">🏸 Ядерный фестиваль</h1>
+        <p style="color: #4a457a;">Результаты турнира</p>
+    </div>
+
+    <div class="refresh-panel">
+        <button id="refreshBtn" class="btn-primary">🔄 Обновить данные</button>
+        <div id="status" class="status"></div>
+        <div id="lastUpdate" class="status" style="font-size:0.7rem;"></div>
+        <div class="force-refresh-hint">💡 Если данные старые — нажмите Ctrl+F5 (полное обновление)</div>
+    </div>
+
+    <div id="content"></div>
+</div>
+
+<script>
+    // ========== ССЫЛКИ НА GOOGLE ТАБЛИЦЫ ==========
+    const SHEETS = {
+        groups: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS3fQ-kSpefkrYNlSsTLKHd4D7oP0ATxubl18w_4LjBA_bfnEsfYE-UwiXkShxWmNSXm0F8095BeGBy/pub?gid=0&single=true&output=csv',
+        bracket: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS3fQ-kSpefkrYNlSsTLKHd4D7oP0ATxubl18w_4LjBA_bfnEsfYE-UwiXkShxWmNSXm0F8095BeGBy/pub?gid=754181403&single=true&output=csv'
+    };
+    
+    let currentData = { groups: [], bracketStages: [] };
+    
+    // ========== УНИВЕРСАЛЬНЫЙ ПАРСИНГ СЧЁТА ==========
+    function parseScore(scoreStr) {
+        if (!scoreStr || scoreStr.trim() === "") return [];
+        let parts = scoreStr.split(',').map(s => s.trim());
+        let results = [];
+        for (let part of parts) {
+            let match = part.match(/(\d+):(\d+)/);
+            if (match) {
+                results.push({
+                    p1: parseInt(match[1]),
+                    p2: parseInt(match[2])
+                });
+            }
+        }
+        return results;
+    }
+    
+    function calculatePointsScored(scoreStr) {
+        let parts = parseScore(scoreStr);
+        let total = 0;
+        for (let part of parts) total += part.p1;
+        return total;
+    }
+    
+    function determineWinner(scoreStr) {
+        let parts = parseScore(scoreStr);
+        if (parts.length === 0) return null;
+        let p1Wins = 0, p2Wins = 0;
+        for (let part of parts) {
+            if (part.p1 > part.p2) p1Wins++;
+            else if (part.p2 > part.p1) p2Wins++;
+        }
+        if (p1Wins > p2Wins) return 1;
+        if (p2Wins > p1Wins) return 2;
+        return null;
+    }
+    
+    function getSetsWon(scoreStr) {
+        let parts = parseScore(scoreStr);
+        let wins = 0;
+        for (let part of parts) if (part.p1 > part.p2) wins++;
+        return wins;
+    }
+    
+    function calculatePlayerStats(group, playerIndex) {
+        let played = 0, wins = 0, setsWon = 0, pointsScored = 0;
+        for (let j = 0; j < group.players.length; j++) {
+            if (playerIndex === j) continue;
+            let score = group.scores[playerIndex]?.[j];
+            if (score && score.trim() !== "") {
+                played++;
+                let winner = determineWinner(score);
+                if (winner === 1) wins++;
+                setsWon += getSetsWon(score);
+                pointsScored += calculatePointsScored(score);
+            }
+        }
+        return { played, wins, setsWon, pointsScored };
+    }
+    
+    function calculatePlaces(group) {
+        const n = group.players.length;
+        const stats = [];
+        for (let i = 0; i < n; i++) {
+            const ps = calculatePlayerStats(group, i);
+            stats.push({ index: i, wins: ps.wins, setsWon: ps.setsWon, pointsScored: ps.pointsScored });
+        }
+        stats.sort((a, b) => {
+            if (a.wins !== b.wins) return b.wins - a.wins;
+            if (a.setsWon !== b.setsWon) return b.setsWon - a.setsWon;
+            return b.pointsScored - a.pointsScored;
+        });
+        const places = new Array(n);
+        for (let i = 0; i < stats.length; i++) places[stats[i].index] = i + 1;
+        return places;
+    }
+    
+    function calculateGroupStats(group) {
+        const places = calculatePlaces(group);
+        const stats = [];
+        for (let i = 0; i < group.players.length; i++) {
+            const ps = calculatePlayerStats(group, i);
+            stats.push({ played: ps.played, wins: ps.wins, setsWon: ps.setsWon, pointsScored: ps.pointsScored, place: places[i] });
+        }
+        return stats;
+    }
+    
+    function parseCSV(csvText) {
+        if (!csvText) return [];
+        const rows = [];
+        const lines = csvText.split(/\r?\n/);
+        for (let line of lines) {
+            if (line.trim() === "") {
+                rows.push([]);
+                continue;
+            }
+            const cells = [];
+            let inQuote = false;
+            let currentCell = "";
+            for (let i = 0; i < line.length; i++) {
+                const ch = line[i];
+                if (ch === '"') {
+                    inQuote = !inQuote;
+                } else if (ch === ',' && !inQuote) {
+                    cells.push(currentCell);
+                    currentCell = "";
+                } else {
+                    currentCell += ch;
+                }
+            }
+            cells.push(currentCell);
+            rows.push(cells.map(cell => cell.trim()));
+        }
+        return rows;
+    }
+    
+    function parseGroups(csvText) {
+        const rows = parseCSV(csvText);
+        if (rows.length === 0) return [];
+        
+        const groups = [];
+        let i = 0;
+        
+        while (i < rows.length) {
+            if (rows[i].length === 0 || (rows[i].length === 1 && rows[i][0] === "")) {
+                i++;
+                continue;
+            }
+            
+            const firstRow = rows[i];
+            const isGroupRow = firstRow[0] && firstRow[0].match(/[А-Яа-я]/) && 
+                               (firstRow[0].includes("Группа") || (firstRow[1] && firstRow[1].match(/[А-Яа-я]/)));
+            
+            if (isGroupRow && firstRow[1] && firstRow[1].trim() !== "") {
+                const players = [];
+                for (let j = 1; j < firstRow.length; j++) {
+                    if (firstRow[j] && firstRow[j].trim() !== "") {
+                        players.push(firstRow[j].trim());
+                    }
+                }
+                
+                if (players.length > 0) {
+                    const group = {
+                        name: firstRow[0].trim(),
+                        players: players,
+                        scores: Array(players.length).fill().map(() => Array(players.length).fill(""))
+                    };
+                    
+                    i++;
+                    while (i < rows.length && rows[i].length > 0 && rows[i][0] && rows[i][0].trim() !== "") {
+                        const resultRow = rows[i];
+                        const playerName = resultRow[0].trim();
+                        const playerIdx = group.players.findIndex(p => p === playerName);
+                        
+                        if (playerIdx !== -1) {
+                            for (let j = 1; j < resultRow.length && j <= players.length; j++) {
+                                if (resultRow[j] && resultRow[j].trim() !== "") {
+                                    group.scores[playerIdx][j-1] = resultRow[j];
+                                }
+                            }
+                        }
+                        i++;
+                    }
+                    groups.push(group);
+                    continue;
+                }
+            }
+            i++;
+        }
+        
+        return groups;
+    }
+    
+    function parseBracket(csvText) {
+        const rows = parseCSV(csvText);
+        const stages = [];
+        
+        if (rows.length < 2) return [
+            { name: "Четвертьфиналы", matches: [] },
+            { name: "Полуфиналы", matches: [] },
+            { name: "Финал", matches: [] }
+        ];
+        
+        // Собираем все матчи по стадиям
+        let currentStage = null;
+        let currentMatches = [];
+        
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row[0] || row[0].trim() === "") continue;
+            
+            const stageName = row[0].trim();
+            const match = {
+                p1: row[1] || "",
+                p2: row[2] || "",
+                score: row[3] || "",
+                winner: row[4] || ""
+            };
+            
+            // Если это название стадии (не начинается с цифры и не пустое)
+            if (stageName.match(/[А-Яа-я]/) && !stageName.match(/^\d/)) {
+                // Сохраняем предыдущую стадию
+                if (currentStage && currentMatches.length > 0) {
+                    stages.push({ name: currentStage, matches: currentMatches });
+                }
+                currentStage = stageName;
+                currentMatches = [];
+            } else if (currentStage && row[1] && row[1].trim() !== "") {
+                // Это матч
+                currentMatches.push(match);
+            }
+        }
+        
+        // Добавляем последнюю стадию
+        if (currentStage && currentMatches.length > 0) {
+            stages.push({ name: currentStage, matches: currentMatches });
+        }
+        
+        return stages;
+    }
+    
+    function renderGroups(groups, containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '';
+        
+        if (groups.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:40px; color:#888;">📭 Нет данных. Организатор пока не заполнил таблицу.</div>';
+            return;
+        }
+        
+        groups.forEach(group => {
+            const n = group.players.length;
+            const stats = calculateGroupStats(group);
+            
+            let html = `<div class="group-container">
+                <div class="group-title-bar">${escapeHtml(group.name)}</div>
+                <div class="table-wrapper">
+                <table class="tournament-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Игроки</th>`;
+            for (let i = 0; i < n; i++) html += `<th>${i+1}</th>`;
+            html += `<th>Игры</th><th>Очки</th><th>Место</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+            
+            for (let i = 0; i < n; i++) {
+                html += `<tr>
+                            <td class="player-col">${i+1}</td>
+                            <td class="player-col">${escapeHtml(group.players[i])}</td>`;
+                for (let j = 0; j < n; j++) {
+                    if (i === j) html += '<td>—</td>';
+                    else {
+                        const val = group.scores[i]?.[j] || '';
+                        const cls = determineWinner(val) === 1 ? 'win-cell' : '';
+                        html += `<td class="${cls}">${escapeHtml(val)}</td>`;
+                    }
+                }
+                html += `<td class="stats-col">${stats[i].played}<br><span style="font-size:0.7rem;">(${stats[i].wins})</span></td>`;
+                html += `<td class="stats-col">${stats[i].pointsScored}<br><span style="font-size:0.7rem; color:#6c6a8b;">воланов</span></td>`;
+                const medal = stats[i].place === 1 ? '🥇' : (stats[i].place === 2 ? '🥈' : (stats[i].place === 3 ? '🥉' : ''));
+                html += `<td class="place-col">${medal} ${stats[i].place}</td>
+                        </tr>`;
+            }
+            html += `</tbody></table></div></div>`;
+            container.innerHTML += html;
+        });
+    }
+    
+    function renderBracket(stages, containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '';
+        
+        stages.forEach(stage => {
+            if (stage.matches.length === 0) return;
+            
+            let html = `<div class="bracket-stage">
+                <div class="stage-title">🏆 ${stage.name}</div>
+                <div class="matches-list">`;
+            
+            stage.matches.forEach((match, idx) => {
+                html += `<div class="match-card">
+                    <div style="font-size:0.7rem; color:#6c6a8b; margin-bottom:6px;">Матч ${idx+1}</div>
+                    <div class="match-players-row">
+                        <span>${escapeHtml(match.p1) || '—'}</span>
+                        <span>⚡</span>
+                        <span>${escapeHtml(match.p2) || '—'}</span>
+                    </div>
+                    <div class="match-score">${escapeHtml(match.score) || '—'}</div>
+                    <div class="winner-badge">🏅 ${match.winner ? escapeHtml(match.winner) : '—'}</div>
+                </div>`;
+            });
+            html += `</div></div>`;
+            container.innerHTML += html;
+        });
+    }
+    
+    // ========== ФУНКЦИЯ ДЛЯ СОЗДАНИЯ АККОРДЕОНА ==========
+    function createAccordionCard(title, contentId, isOpenByDefault = false) {
+        return `
+            <div class="card">
+                <div class="card-header" onclick="toggleAccordion('${contentId}')">
+                    <span>${title}</span>
+                    <span class="arrow" id="arrow-${contentId}">▼</span>
+                </div>
+                <div class="card-body" id="${contentId}">
+                    <div id="${contentId}-inner"></div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Функция для переключения видимости
+    window.toggleAccordion = function(contentId) {
+        const body = document.getElementById(contentId);
+        const arrow = document.getElementById(`arrow-${contentId}`);
+        if (body) {
+            body.classList.toggle('open');
+            if (arrow) {
+                arrow.classList.toggle('rotated');
+            }
+        }
+    };
+    
+    function renderAll() {
+        const content = document.getElementById('content');
+        
+        // Создаём карточки-аккордеоны
+        content.innerHTML = `
+            ${createAccordionCard('🏸 Групповой этап', 'groupsSection', true)}
+            ${createAccordionCard('🏆 Плей-офф', 'bracketSection', false)}
+        `;
+        
+        // Заполняем содержимое
+        renderGroups(currentData.groups, 'groupsSection-inner');
+        renderBracket(currentData.bracketStages, 'bracketSection-inner');
+    }
+    
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
+    }
+    
+    async function fetchSheet(url, name) {
+        try {
+            const cacheBuster = '&_cb=' + Date.now() + '_' + Math.random();
+            const response = await fetch(url + cacheBuster);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return await response.text();
+        } catch (e) {
+            console.error(`Ошибка ${name}:`, e);
+            return '';
+        }
+    }
+    
+    async function loadAllData() {
+        const statusDiv = document.getElementById('status');
+        const lastUpdateDiv = document.getElementById('lastUpdate');
+        
+        statusDiv.innerHTML = '⏳ Загрузка данных...';
+        statusDiv.className = 'status status-info';
+        
+        try {
+            const [groupsCSV, bracketCSV] = await Promise.all([
+                fetchSheet(SHEETS.groups, 'groups'),
+                fetchSheet(SHEETS.bracket, 'bracket')
+            ]);
+            
+            currentData.groups = parseGroups(groupsCSV);
+            currentData.bracketStages = parseBracket(bracketCSV);
+            
+            currentData.lastUpdate = new Date().toLocaleString();
+            
+            renderAll();
+            
+            statusDiv.innerHTML = '✅ Данные загружены';
+            statusDiv.className = 'status status-success';
+            lastUpdateDiv.innerHTML = `Обновлено: ${currentData.lastUpdate}`;
+            
+            setTimeout(() => { if(statusDiv) statusDiv.innerHTML = ''; }, 3000);
+        } catch (error) {
+            statusDiv.innerHTML = '❌ Ошибка загрузки. Проверьте интернет.';
+            statusDiv.className = 'status status-error';
+        }
+    }
+    
+    document.getElementById('refreshBtn').addEventListener('click', loadAllData);
+    loadAllData();
+</script>
+</body>
+</html>
