@@ -139,7 +139,10 @@
         maleGroups: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRjcBpWDMheV2o_BwvaaqdBVM_nbPVJorccOYX46Sb4Ir3FLAqrE2ms_8khA3sumAqTQbA_1ZxkO3xO/pub?gid=0&single=true&output=csv',
         femaleGroups: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRjcBpWDMheV2o_BwvaaqdBVM_nbPVJorccOYX46Sb4Ir3FLAqrE2ms_8khA3sumAqTQbA_1ZxkO3xO/pub?gid=2112686868&single=true&output=csv',
         maleBracket: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRjcBpWDMheV2o_BwvaaqdBVM_nbPVJorccOYX46Sb4Ir3FLAqrE2ms_8khA3sumAqTQbA_1ZxkO3xO/pub?gid=1187151639&single=true&output=csv',
-        femaleBracket: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRjcBpWDMheV2o_BwvaaqdBVM_nbPVJorccOYX46Sb4Ir3FLAqrE2ms_8khA3sumAqTQbA_1ZxkO3xO/pub?gid=925928067&single=true&output=csv'
+        femaleBracket: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRjcBpWDMheV2o_BwvaaqdBVM_nbPVJorccOYX46Sb4Ir3FLAqrE2ms_8khA3sumAqTQbA_1ZxkO3xO/pub?gid=925928067&single=true&output=csv',
+        mixBracket: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRjcBpWDMheV2o_BwvaaqdBVM_nbPVJorccOYX46Sb4Ir3FLAqrE2ms_8khA3sumAqTQbA_1ZxkO3xO/pub?gid=1620860998&single=true&output=csv',
+        mixGroups: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRjcBpWDMheV2o_BwvaaqdBVM_nbPVJorccOYX46Sb4Ir3FLAqrE2ms_8khA3sumAqTQbA_1ZxkO3xO/pub?gid=2099258207&single=true&output=csv'
+    };
     };
     
     let currentData = { maleGroups: [], femaleGroups: [], maleBracketStages: [], femaleBracketStages: [] };
@@ -465,10 +468,12 @@
         
         // Создаём карточки-аккордеоны
         content.innerHTML = `
-            ${createAccordionCard('🏸 Мужской одиночный разряд · Групповой этап', 'maleGroupsSection', false)}
+            ${createAccordionCard('🏸 Мужской парный разряд · Групповой этап', 'maleGroupsSection', false)}
             ${createAccordionCard('🏆 Мужская олимпийская сетка · Плей-офф', 'maleBracketSection', false)}
-            ${createAccordionCard('🏸 Женский одиночный разряд · Групповой этап', 'femaleGroupsSection', false)}
+            ${createAccordionCard('🏸 Женский парный разряд · Групповой этап', 'femaleGroupsSection', false)}
             ${createAccordionCard('🏆 Женская олимпийская сетка · Плей-офф', 'femaleBracketSection', false)}
+            ${createAccordionCard('🏸 Смешанный парный разряд · Групповой этап', 'mixGroupsSection', false)}
+            ${createAccordionCard('🏆 Микст олимпийская сетка · Плей-офф', 'mixBracketSection', false)}
         `;
         
         // Заполняем содержимое
