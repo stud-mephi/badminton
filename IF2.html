@@ -125,7 +125,23 @@
         <h1 style="font-size: 2.2rem; background: linear-gradient(135deg,#0b0829,#413a7c); background-clip: text; -webkit-background-clip: text; color: transparent;">🏸 Ядерный фестиваль</h1>
         <p style="color: #4a457a;">Результаты турнира</p>
     </div>
-
+<!-- Кнопка возврата на главную -->
+<div style="text-align: center; margin: 40px auto 20px;">
+    <a href="index.html" style="
+        display: inline-block;
+        background: #0b0829;
+        color: white;
+        text-decoration: none;
+        padding: 14px 32px;
+        border-radius: 40px;
+        font-weight: bold;
+        font-size: 1rem;
+        box-shadow: 0 4px 12px rgba(11,8,41,0.2);
+        transition: transform 0.2s;
+    " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+        ← Вернуться на главную
+    </a>
+</div>
     <div class="refresh-panel">
         <button id="refreshBtn" class="btn-primary">🔄 Обновить данные</button>
         <div id="status" class="status"></div>
