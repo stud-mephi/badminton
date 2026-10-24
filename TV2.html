@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Товарищеская встреча 10.10</title>
+    <title>Товарищеская встреча 24.10</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: #bfbfdb; padding: 20px 12px 40px; }
@@ -46,26 +46,10 @@
 <body>
 <div class="container">
     <div style="text-align: center; margin-bottom: 20px;">
-        <h1 style="font-size: 2.2rem; background: linear-gradient(135deg,#0b0829,#413a7c); background-clip: text; -webkit-background-clip: text; color: transparent;">Товарищеская встреча 10.10</h1>
+        <h1 style="font-size: 2.2rem; background: linear-gradient(135deg,#0b0829,#413a7c); background-clip: text; -webkit-background-clip: text; color: transparent;">Товарищеская встреча 24.10</h1>
         <p style="color: #4a457a;">Результаты турнира</p>
     </div>
-    <!-- Кнопка возврата на главную -->
-<div style="text-align: center; margin: 40px auto 20px;">
-    <a href="index.html" style="
-        display: inline-block;
-        background: #0b0829;
-        color: white;
-        text-decoration: none;
-        padding: 14px 32px;
-        border-radius: 40px;
-        font-weight: bold;
-        font-size: 1rem;
-        box-shadow: 0 4px 12px rgba(11,8,41,0.2);
-        transition: transform 0.2s;
-    " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-        ← Вернуться на главную
-    </a>
-</div>
+
     <div class="refresh-panel">
         <button id="refreshBtn" class="btn-primary">🔄 Обновить данные</button>
         <div id="status" class="status"></div>
@@ -77,15 +61,12 @@
 
 <script>
     const SHEETS = {
-        maleGroups: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTpPAAow9LtwCiK33nvWyXvi1JHs3o-k5XCCYOi8cIIPckfUDDiDdPyUXYc4NvCTbiFjHBxO6xI6XEz/pub?gid=0&single=true&output=csv',
-        femaleGroups: 'hv',
-        maleBracket: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTpPAAow9LtwCiK33nvWyXvi1JHs3o-k5XCCYOi8cIIPckfUDDiDdPyUXYc4NvCTbiFjHBxO6xI6XEz/pub?gid=1187151639&single=true&output=csv',
-        femaleBracket: 'v',
-        mixBracket: 'hv',
-        mixGroups: 'v'
+        firstGroups: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTpPAAow9LtwCiK33nvWyXvi1JHs3o-k5XCCYOi8cIIPckfUDDiDdPyUXYc4NvCTbiFjHBxO6xI6XEz/pub?gid=0&single=true&output=csv',
+        secondGroups: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTpPAAow9LtwCiK33nvWyXvi1JHs3o-k5XCCYOi8cIIPckfUDDiDdPyUXYc4NvCTbiFjHBxO6xI6XEz/pub?gid=2112686868&single=true&output=csv',
+        fifthPlace: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTpPAAow9LtwCiK33nvWyXvi1JHs3o-k5XCCYOi8cIIPckfUDDiDdPyUXYc4NvCTbiFjHBxO6xI6XEz/pub?gid=1187151639&single=true&output=csv'
     };
 
-    let currentData = { maleGroups: [], femaleGroups: [], mixGroups: [], maleBracketStages: [], femaleBracketStages: [], mixBracketStages: [] };
+    let currentData = { firstGroups: [], secondGroups: [], fifthPlaceStages: [] };
 
     // ========== УНИВЕРСАЛЬНЫЙ ПАРСИНГ СЧЁТА ==========
     function parseScore(scoreStr) {
@@ -229,26 +210,14 @@
 
     function parseBracket(csvText) {
         const rows = parseCSV(csvText);
-        const quarterfinals = [], semifinals = [], finals = [];
-        if (rows.length < 2) return [
-            { name: "Четвертьфиналы", matches: [] },
-            { name: "Полуфиналы", matches: [] },
-            { name: "Финал", matches: [] }
-        ];
+        const matches = [];
+        if (rows.length < 2) return [{ name: "Игры за 5 место", matches: [] }];
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
             if (!row[0] || row[0].trim() === "") continue;
-            const stageName = row[0].trim().toLowerCase();
-            const match = { p1: row[1] || "", p2: row[2] || "", score: row[3] || "", winner: row[4] || "" };
-            if (stageName.includes('четвертьфинал')) quarterfinals.push(match);
-            else if (stageName.includes('полуфинал')) semifinals.push(match);
-            else if (stageName.includes('финал')) finals.push(match);
+            matches.push({ p1: row[1] || "", p2: row[2] || "", score: row[3] || "", winner: row[4] || "" });
         }
-        return [
-            { name: "Четвертьфиналы", matches: quarterfinals },
-            { name: "Полуфиналы", matches: semifinals },
-            { name: "Финал", matches: finals }
-        ];
+        return [{ name: "Игры за 5 место", matches: matches }];
     }
 
     function renderGroups(groups, containerId) {
@@ -294,7 +263,10 @@
         if (!container) return;
         container.innerHTML = '';
         stages.forEach(stage => {
-            if (stage.matches.length === 0) return;
+            if (stage.matches.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:40px; color:#888;">📭 Нет данных.</div>';
+                return;
+            }
             let html = `<div class="bracket-stage"><div class="stage-title">🏆 ${stage.name}</div><div class="matches-list">`;
             stage.matches.forEach((match, idx) => {
                 html += `<div class="match-card">
@@ -335,19 +307,13 @@
     function renderAll() {
         const content = document.getElementById('content');
         content.innerHTML = `
-            ${createAccordionCard('🏸 Мужской парный разряд · Групповой этап', 'maleGroupsSection')}
-            ${createAccordionCard('🏆 Мужская олимпийская сетка · Плей-офф', 'maleBracketSection')}
-            ${createAccordionCard('🏸 Женский парный разряд · Групповой этап', 'femaleGroupsSection')}
-            ${createAccordionCard('🏆 Женская олимпийская сетка · Плей-офф', 'femaleBracketSection')}
-            ${createAccordionCard('🏸 Смешанный парный разряд · Групповой этап', 'mixGroupsSection')}
-            ${createAccordionCard('🏆 Микст олимпийская сетка · Плей-офф', 'mixBracketSection')}
+            ${createAccordionCard('🏸 1 групповой этап', 'firstGroupsSection')}
+            ${createAccordionCard('🏸 2 групповой этап', 'secondGroupsSection')}
+            ${createAccordionCard('🏆 Игры за 5 место', 'fifthPlaceSection')}
         `;
-        renderGroups(currentData.maleGroups, 'maleGroupsSection-inner');
-        renderGroups(currentData.femaleGroups, 'femaleGroupsSection-inner');
-        renderGroups(currentData.mixGroups, 'mixGroupsSection-inner');
-        renderBracket(currentData.maleBracketStages, 'maleBracketSection-inner');
-        renderBracket(currentData.femaleBracketStages, 'femaleBracketSection-inner');
-        renderBracket(currentData.mixBracketStages, 'mixBracketSection-inner');
+        renderGroups(currentData.firstGroups, 'firstGroupsSection-inner');
+        renderGroups(currentData.secondGroups, 'secondGroupsSection-inner');
+        renderBracket(currentData.fifthPlaceStages, 'fifthPlaceSection-inner');
     }
 
     function escapeHtml(str) {
@@ -373,20 +339,14 @@
         statusDiv.innerHTML = '⏳ Загрузка данных...';
         statusDiv.className = 'status status-info';
         try {
-            const [maleGroupsCSV, femaleGroupsCSV, mixGroupsCSV, maleBracketCSV, femaleBracketCSV, mixBracketCSV] = await Promise.all([
-                fetchSheet(SHEETS.maleGroups, 'maleGroups'),
-                fetchSheet(SHEETS.femaleGroups, 'femaleGroups'),
-                fetchSheet(SHEETS.mixGroups, 'mixGroups'),
-                fetchSheet(SHEETS.maleBracket, 'maleBracket'),
-                fetchSheet(SHEETS.femaleBracket, 'femaleBracket'),
-                fetchSheet(SHEETS.mixBracket, 'mixBracket')
+            const [firstGroupsCSV, secondGroupsCSV, fifthPlaceCSV] = await Promise.all([
+                fetchSheet(SHEETS.firstGroups, 'firstGroups'),
+                fetchSheet(SHEETS.secondGroups, 'secondGroups'),
+                fetchSheet(SHEETS.fifthPlace, 'fifthPlace')
             ]);
-            currentData.maleGroups = parseGroups(maleGroupsCSV);
-            currentData.femaleGroups = parseGroups(femaleGroupsCSV);
-            currentData.mixGroups = parseGroups(mixGroupsCSV);
-            currentData.maleBracketStages = parseBracket(maleBracketCSV);
-            currentData.femaleBracketStages = parseBracket(femaleBracketCSV);
-            currentData.mixBracketStages = parseBracket(mixBracketCSV);
+            currentData.firstGroups = parseGroups(firstGroupsCSV);
+            currentData.secondGroups = parseGroups(secondGroupsCSV);
+            currentData.fifthPlaceStages = parseBracket(fifthPlaceCSV);
             currentData.lastUpdate = new Date().toLocaleString();
             renderAll();
             statusDiv.innerHTML = '✅ Данные загружены';
@@ -402,7 +362,8 @@
     document.getElementById('refreshBtn').addEventListener('click', loadAllData);
     loadAllData();
 </script>
-    <!-- Кнопка возврата на главную -->
+
+<!-- Кнопка возврата на главную -->
 <div style="text-align: center; margin: 40px auto 20px;">
     <a href="index.html" style="
         display: inline-block;
